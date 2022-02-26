@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	env "github.com/charlieroth/lab/go/go-http/env"
 	"github.com/gofiber/fiber/v2"
+  "github.com/gofiber/fiber/v2/middleware/logger"
 )
 
 func main() {
@@ -14,6 +16,8 @@ func main() {
 	}
 
 	app := fiber.New()
+
+  app.Use(logger.New())
 
 	app.Get("/ping", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"msg": "pong"})
@@ -32,5 +36,6 @@ func main() {
 		return c.Status(200).JSON(fiber.Map{"message": body.Msg})
 	})
 
-	app.Listen(fmt.Sprintf(":%s", env.Get("PORT")))
+  addr := fmt.Sprintf(":%s", env.Get("PORT"))
+	log.Fatal(app.Listen(addr))
 }
