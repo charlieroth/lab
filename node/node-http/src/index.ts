@@ -10,7 +10,7 @@ const start = async () => {
   try {
     await app.listen(3000)
   } catch (err) {
-    fastify.log.error(err)
+    app.log.error(err)
     process.exit(1)
   }
 }
