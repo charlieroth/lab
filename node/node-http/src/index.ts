@@ -20,7 +20,8 @@ const start = async () => {
   try {
     loadEnv()
     const addr = process.env.PORT
-    await app.listen(addr)
+    const host = process.env.HOST
+    await app.listen(addr, host)
   } catch (err) {
     app.log.error(err)
     process.exit(1)
