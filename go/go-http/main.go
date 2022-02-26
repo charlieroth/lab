@@ -1,10 +1,18 @@
 package main
 
 import (
+	"fmt"
+
+	env "github.com/charlieroth/lab/go/go-http/env"
 	"github.com/gofiber/fiber/v2"
 )
 
 func main() {
+	env, err := env.New(".env.json")
+	if err != nil {
+		panic(err)
+	}
+
 	app := fiber.New()
 
 	app.Get("/ping", func(c *fiber.Ctx) error {
@@ -24,5 +32,5 @@ func main() {
 		return c.Status(200).JSON(fiber.Map{"message": body.Msg})
 	})
 
-	app.Listen(":3000")
+	app.Listen(fmt.Sprintf(":%d", env.Port))
 }
