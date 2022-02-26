@@ -1,31 +1,45 @@
 package env
 
 import (
-	"encoding/json"
+	"bufio"
 	"errors"
-	"io/ioutil"
+	"fmt"
 	"os"
+	"strings"
 )
 
-type Env struct {
-	Port int `json:"port"`
+func Set(key string, value string) error {
+  return os.Setenv(key, value)
 }
 
-func New(path string) (*Env, error) {
+func Get(key string) string {
+  return os.Getenv(key)
+}
+
+func Load(path string) error {
 	// load json file into string
 	envFile, err := os.Open(path)
 	if err != nil {
-		return nil, errors.New("failed to load env")
+		return errors.New("failed to load env")
 	}
 	defer envFile.Close()
-	// read file into []byte
-	bytes, _ := ioutil.ReadAll(envFile)
-	// unmarshal []byte into Env struct
-  env := Env{}
-	err = json.Unmarshal(bytes, &env)
-  if err != nil {
-		return nil, errors.New("failed to load env")
+
+  // set environment variables
+	scanner := bufio.NewScanner(envFile)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "\n" {
+			continue
+		}
+		if !strings.Contains(line, "=") {
+			continue
+		}
+
+
+		envVar := strings.Split(line, "=")
+    fmt.Printf("%s=%s\n", envVar[0], envVar[1])
+    os.Setenv(envVar[0], envVar[1])
 	}
 
-	return &env, nil
+  return nil
 }

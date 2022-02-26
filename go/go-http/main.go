@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	env, err := env.New(".env.json")
+	err := env.Load(".env")
 	if err != nil {
 		panic(err)
 	}
@@ -32,5 +32,5 @@ func main() {
 		return c.Status(200).JSON(fiber.Map{"message": body.Msg})
 	})
 
-	app.Listen(fmt.Sprintf(":%d", env.Port))
+	app.Listen(fmt.Sprintf(":%s", env.Get("PORT")))
 }
