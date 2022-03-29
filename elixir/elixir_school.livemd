@@ -1,0 +1,218 @@
+# Elixir School
+
+## Basics
+
+[Elixir School Basics](https://elixirschool.com/en/lessons/basics/basics)
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Atoms
+
+A constant whose name is its value
+
+`:foo`
+
+Equivalents:
+
+* JavaScript `const s = Symbol("foo")`
+* Ruby `:foo`
+
+```elixir
+:foo
+```
+
+```elixir
+:foo == :bar
+```
+
+Booleans `true` and `false` are also atoms `:true` and `:false`
+
+```elixir
+[is_atom(true), is_atom(false), is_boolean(true), is_boolean(false)]
+```
+
+Module names are also valid atoms
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Boolean Operators
+
+`||`, `&&`, `!`, `and`, `or`, `not` are the built-in boolean operators
+
+```elixir
+-20 || true
+```
+
+```elixir
+42 && true
+```
+
+```elixir
+!42
+```
+
+Operators `and`, `or`, `not` must have a boolean as their first argument
+
+```elixir
+true and 42
+```
+
+```elixir
+42 and true
+```
+
+```elixir
+not false
+```
+
+### String Interpolation and Concatenation
+
+```elixir
+first_name = "Charles"
+middle_name = "Thomas"
+last_name = "Roth"
+full_name = "#{first_name} #{middle_name}" <> " #{last_name}" <> " III"
+```
+
+## Collections
+
+### List
+
+Collections of values which may include multiple types and non-unique values
+
+Implemented as linked lists therefore prepend is `O(1)` and append is `O(n)`
+
+```elixir
+list = [3.14, :pie, "Apple"]
+```
+
+```elixir
+# prepend (fast)
+["π" | list]
+```
+
+```elixir
+# append (slow), concatenation
+list ++ ["π"]
+```
+
+```elixir
+# list subtraction
+list -- ["Apple"]
+```
+
+```elixir
+# head & tail
+[head | tail] = list
+h = hd(list)
+t = tl(list)
+[h, t] == [head, tail]
+```
+
+### Tuples
+
+Similar to `List`
+
+* Stored contiguously in memory
+* Modification is expensive (new tuple is copied to memory)
+
+Very useful in "pattern matching"
+
+```elixir
+tup_list = {3.14, :pie, "Apple"}
+```
+
+### Keyword List
+
+* Two-element tuple whose first element is an atom
+* Keys are atoms, ordered and do not have to be unique
+
+```elixir
+[first_name: "Charlie", last_name: "Roth"]
+```
+
+```elixir
+[{:first_name, "Charlie"}, {:last_name, "Roth"}]
+```
+
+### Maps
+
+* key-value store
+* Keys can be of any type
+* Un-ordered
+
+```elixir
+person = %{:first_name => "Charlie", :last_name => "Roth", :age => 26}
+```
+
+```elixir
+person[:first_name]
+```
+
+A `Map` can be updated with "map update" syntax
+
+```elixir
+%{person | :first_name => "Charles"}
+```
+
+When modifying a map, with "map update" syntax, only keys that are present are allowed to be updated
+
+```elixir
+%{person | :location => "Sweden"}
+```
+
+To add keys that are not currently in the `Map`, use the `Map.put/3` function
+
+```elixir
+Map.put(person, :location, "Sweden")
+```
+
+## Enum
+
+[`Enum` module](https://hexdocs.pm/elixir/Enum.html) includes 70 functions to work with enumerables (`Map`, `List`, `Keyword List`)
+
+Another form of enumeration called _"lazy enumeration"_ can be achieved with the `Stream` module
+
+```elixir
+Enum.all?(["foo", "bar", "hello"], fn s -> String.length(s) == 3 end)
+```
+
+```elixir
+Enum.any?(["foo", "bar", "hello"], fn s -> String.contains?(s, "oo") end)
+```
+
+```elixir
+Enum.each(["one", "two", "three"], fn s -> IO.puts(s) end)
+```
+
+```elixir
+Enum.map([1, 2, 3], fn n -> n * 2 end)
+```
+
+```elixir
+Enum.filter([0, 1, 2, 3, 4, 5], fn n -> rem(n, 2) == 0 end)
+```
+
+```elixir
+Enum.reduce([1, 2, 3, 4, 5], 0, fn n, acc -> acc + n end)
+```
+
+```elixir
+Enum.reduce(["3", "2", "1", "Lift Off!!"], "", fn s, acc -> acc <> " " <> s end)
+```
+
+```elixir
+Enum.sort([4, 2, 5, 3, 1])
+```
+
+```elixir
+Enum.sort([4, 2, 5, 3, 1], :desc)
+```
+
+The "Capture Operator" `&` can be used to represent an anonymous function
+
+Arguments supplied to the anonymous function can be accessed through `&1 ... &n` where `n` represents the order of the arguments
+
+```elixir
+Enum.reduce(["3", "2", "1", "Lift Off!!"], "", &(&2 <> " " <> &1))
+```
