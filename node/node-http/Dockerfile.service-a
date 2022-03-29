@@ -1,0 +1,15 @@
+FROM node:17.2-alpine
+
+WORKDIR /node-http/service-a/
+
+COPY . .
+
+RUN npm ci --production
+
+USER node
+
+ENV NODE_ENV=development
+
+EXPOSE 3000:3000
+
+CMD ["npm", "run", "start:dev"]
