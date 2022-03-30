@@ -532,3 +532,7 @@ Best practice when using the `|>` operator is when the _arity_ of a function is 
 ```elixir
 "Charles Thomas Roth" |> String.upcase() |> String.split()
 ```
+
+## Modules
+
+Modules are Elixir's way to organize functions into namespaces
