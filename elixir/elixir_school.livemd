@@ -171,7 +171,7 @@ Map.put(person, :location, "Sweden")
 
 [`Enum` module](https://hexdocs.pm/elixir/Enum.html) includes 70 functions to work with enumerables (`Map`, `List`, `Keyword List`)
 
-Another form of enumeration called _"lazy enumeration"_ can be achieved with the `Stream` module
+_Lazy enumeration_ can be achieved with the `Stream` module
 
 ```elixir
 Enum.all?(["foo", "bar", "hello"], fn s -> String.length(s) == 3 end)
@@ -216,3 +216,161 @@ Arguments supplied to the anonymous function can be accessed through `&1 ... &n`
 ```elixir
 Enum.reduce(["3", "2", "1", "Lift Off!!"], "", &(&2 <> " " <> &1))
 ```
+
+## Pattern Matching
+
+Allows matching of simple values, data structures and functions
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Match Operator
+
+In Elixir, the `=` sign is not the same as most programming languages. The `=` sign is actually an operator called the _match operator_. Behaves as an algebraic `=` sign and when the match is successful, it behaves as assignment.
+
+The `=` turns the expression into an equation where the LHS must _match_ the RHS. If the match succeeds, it returns the value of the equation
+
+```elixir
+x = 1
+```
+
+```elixir
+1 = x
+```
+
+```elixir
+2 = x
+```
+
+```elixir
+list = [1, 2, 3]
+```
+
+```elixir
+[1, 2, 3] = list
+```
+
+```elixir
+[2, 3, 4] = list
+```
+
+```elixir
+[1 | tail] = list
+```
+
+```elixir
+{:ok, value} = {:ok, "Success"}
+```
+
+```elixir
+{:ok, value} = {:error, "Failed to read file"}
+```
+
+### Pin Operator
+
+The `^` operator matches on the existing value rather than rebinding to a new one
+
+Keys in `Map`s and function clasues can use the `^` operator as well
+
+```elixir
+x = 1
+```
+
+```elixir
+^x = 2
+```
+
+```elixir
+{x, ^x} = {2, 1}
+```
+
+```elixir
+x
+```
+
+```elixir
+key = "hello"
+%{^key => "world"} = %{"hello" => "world"}
+```
+
+```elixir
+greeting = "Hello"
+
+greet = fn
+  ^greeting, name -> "Hi #{name}"
+  greeting, name -> "#{greeting}, #{name}"
+end
+```
+
+```elixir
+greet.("Hello", "Charlie")
+```
+
+```elixir
+greet.("God morgon", "Charlie")
+```
+
+## Control Structures
+
+Control structures in Elixir are implemented as functions such as `if/2` where the first argument is the conditional to evaluate and the second argument is the continuation function. However, in practice they are used as macros and not the typical language constructs like in most programming languages.
+
+Available control structures:
+
+* `if/2`
+* `unless/2`
+* `case/2`
+* `cond/1`
+* `with/1`
+
+```elixir
+if String.valid?("Hello") do
+  "Valid string :)"
+else
+  "Invalid string :("
+end
+```
+
+```elixir
+unless is_integer(123) do
+  "Not an integer"
+end
+```
+
+`case/2` is the same as Rust's `match` operator
+
+```elixir
+case {:ok, "Hello world"} do
+  {:ok, msg} -> msg
+  {:error} -> "Oops"
+  _ -> "idk what is going on"
+end
+```
+
+```elixir
+case {1, 2, 3} do
+  {1, x, 3} when rem(x, 2) == 0 ->
+    "Matched"
+
+  _ ->
+    "Second number is odd"
+end
+```
+
+The `with/2` function is useful when you want to perform something similar to nested `case/2` functions but desire a more composable way to write these conditions
+
+```elixir
+person = %{first: "Charles", last: "Roth"}
+
+with {:ok, first} <- Map.fetch(person, :first),
+     {:ok, last} <- Map.fetch(person, :last),
+     do: last <> ", " <> first
+```
+
+```elixir
+person = %{first: "Charles"}
+
+with {:ok, first} <- Map.fetch(person, :first),
+     {:ok, last} <- Map.fetch(person, :last),
+     do: last <> ", " <> first
+```
+
+## Functions
