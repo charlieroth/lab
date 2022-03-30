@@ -520,3 +520,15 @@ end
 IO.puts(Greeter4.hello("Charlie"))
 IO.puts(Greeter4.hello("Charlie", "es"))
 ```
+
+## Pipe Operator
+
+Best practice when using the `|>` operator is when the _arity_ of a function is more than 1, use parentheses. Otherwise just writing the function name like `String.split` is fine
+
+```elixir
+"Charles Thomas Roth" |> String.split()
+```
+
+```elixir
+"Charles Thomas Roth" |> String.upcase() |> String.split()
+```
