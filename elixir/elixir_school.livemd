@@ -374,3 +374,149 @@ with {:ok, first} <- Map.fetch(person, :first),
 ```
 
 ## Functions
+
+### Anonymous Functions
+
+```elixir
+adder = fn a, b -> a + b end
+adder.(2, 3)
+```
+
+```elixir
+adder_short = &(&1 + &2)
+adder_short.(4, 5)
+```
+
+Pattern matching can be used with function signatures as well
+
+```elixir
+handle_result = fn
+  {:ok, result} -> IO.puts("Handling...")
+  {:ok, _} -> IO.puts("Handling some other stuff...")
+  {:error} -> IO.puts("Error occurred")
+end
+```
+
+```elixir
+some_result = 42
+```
+
+```elixir
+handle_result.({:ok, some_result})
+```
+
+```elixir
+handle_result.({:error})
+```
+
+### Named Functions
+
+```elixir
+defmodule Greeter do
+  def greet(name) do
+    "Hey, " <> name
+  end
+
+  def goodbye(name), do: "Good bye, " <> name
+end
+```
+
+```elixir
+Greeter.greet("Charlie")
+```
+
+```elixir
+Greeter.goodbye("Charlie")
+```
+
+Functions have an _arity_, such as `case/2`, where `/2` represents the number arguments the function accepts
+
+This allows you to have several functions with the same name but with a different number of arguments
+
+```elixir
+defmodule Greeter2 do
+  def hello(), do: "Hello, anon"
+  def hello(name), do: "Hello, " <> name
+  def hello(name1, name2), do: "Hello, " <> name1 <> " and " <> name2
+end
+```
+
+```elixir
+IO.puts(Greeter2.hello())
+IO.puts(Greeter2.hello("Charlie"))
+IO.puts(Greeter2.hello("Charlie", "eilrahC"))
+```
+
+Multiple functions with the same name but different arities is actually an example of pattern matching, a simple one that is. Pattern matching in function signatures can be more powerful than just the number of arguments, they can be matched by the contents of the arguments themselves
+
+```elixir
+defmodule Greeter1 do
+  def hello(%{name: person_name}) do
+    IO.puts("Hello, " <> person_name)
+  end
+
+  def full_hello(%{name: person_name} = person) do
+    IO.puts("Hello, " <> person_name)
+    IO.inspect(person)
+  end
+end
+```
+
+Here the function `Greeter1.hello/1` takes a `Map` as its argument. We then _destructure_ this `Map` and extract the value at the key `:name` and assign that to the variable `person_name`. This assignment only happens if the function signature match is correct, else the result is an error
+
+```elixir
+Greeter1.hello(%{name: "Charlie Roth"})
+Greeter1.hello(%{name: "Miranda Nichols"})
+# partial pattern match of the passed Map
+Greeter1.hello(%{name: "Parker Roth", location: "Arizona", age: 21})
+```
+
+```elixir
+Greeter1.hello("Charlie Roth")
+```
+
+```elixir
+Greeter1.full_hello(%{name: "Parker Roth", location: "Arizona", age: 21})
+```
+
+### Guards
+
+Functions can have "attached" _guard_ statements that will be checked after the function signature is matched
+
+This allows you to have even more granular matching on which function to execute
+
+```elixir
+defmodule Greeter3 do
+  def hello(names) when is_list(names) do
+    names |> Enum.join(", ") |> hello
+  end
+
+  def hello(name) when is_binary(name) do
+    phrase() <> name
+  end
+
+  defp phrase, do: "Hello "
+end
+```
+
+```elixir
+Greeter3.hello(["Charlie", "Miranda", "Parker"])
+```
+
+Function signatures can have default values for arguments when they are not supplied to the function
+
+```elixir
+defmodule Greeter4 do
+  def hello(name, lang \\ "en") do
+    phrase(lang) <> name
+  end
+
+  defp phrase("en"), do: "Hello, "
+  defp phrase("es"), do: "Hola, "
+end
+```
+
+```elixir
+IO.puts(Greeter4.hello("Charlie"))
+IO.puts(Greeter4.hello("Charlie", "es"))
+```
