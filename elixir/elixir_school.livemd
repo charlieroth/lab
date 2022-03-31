@@ -536,3 +536,151 @@ Best practice when using the `|>` operator is when the _arity_ of a function is 
 ## Modules
 
 Modules are Elixir's way to organize functions into namespaces
+
+There are some basic examples of modules above
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Nested Modules
+
+```elixir
+defmodule Example.Greetings do
+  def morning(name) do
+    "Good morning #{name}"
+  end
+
+  def evening(name) do
+    "Good evening #{name}"
+  end
+end
+```
+
+```elixir
+Example.Greetings.morning("Charlie")
+```
+
+#### Module Attributes
+
+Commonly used as constants that are scoped to the module they are within
+
+Reservered module attributes in Elixir:
+
+* `moduledoc` - Documents the current module
+* `doc` - Documentation for functions and macros
+* `behaviour` - Use an OTP for user-defined behaviour
+
+```elixir
+defmodule Example do
+  @greeting "Hello"
+
+  def greeting(name) do
+    ~s(#{@greeting} #{name})
+  end
+end
+```
+
+```elixir
+Example.greeting("Charlie")
+```
+
+#### Structs
+
+Special maps with a defined set of keys and default values
+
+Defined within a module which it inherits the name from
+
+```elixir
+defmodule Example.User do
+  defstruct name: "Charlie", roles: []
+end
+```
+
+```elixir
+%Example.User{}
+```
+
+```elixir
+%Example.User{name: "Miranda", roles: ["Physicist"]}
+```
+
+```elixir
+u = %Example.User{}
+u = %{u | name: "Charles"}
+u = %{u | roles: ["Programmer", "Guru"]}
+```
+
+#### Module Composition
+
+<!-- livebook:{"break_markdown":true} -->
+
+The `alias` macro enables the reference and make use of one module inside of another
+
+```elixir
+defmodule Sayings.Greeting do
+  def basic(name), do: "Hello, " <> name
+end
+
+defmodule Sayings.Goodbye do
+  def basic(name), do: "Goodbye, " <> name
+end
+
+defmodule Example do
+  alias Sayings.Greetings
+
+  def greeting(name), do: Greetings.basic(name)
+end
+```
+
+When aliasing a module that has a possible conflict with the current module or another module, or you just want to shorten the referencing name
+
+```elixir
+defmodule Example do
+  alias Sayings.Greeting, as: Hi
+
+  def print_msg(name), do: Hi.basic(name)
+end
+```
+
+Since modules are namespaces and the author has the ability to "nest" modules, it is possible `alias` multiple modules from the "parent" modules
+
+```elixir
+defmodule Example do
+  alias Sayings.{Greeting, Goodbye}
+
+  def print_msg(name) do
+    name |> Greeting.basic() |> IO.puts()
+    name |> Goodbye.basic() |> IO.puts()
+  end
+end
+```
+
+```elixir
+Example.print_msg("Charlie")
+```
+
+The `import` macro adds the functions of the module it is importing to the scope of the module
+
+```elixir
+# last/1 is not in the scope of the program's module
+last([1, 2, 3])
+```
+
+```elixir
+import List
+```
+
+```elixir
+last([1, 2, 3])
+```
+
+The `require` macro does the same thing as `import` except only for macros of the module it is referring to
+
+<!-- livebook:{"break_markdown":true} -->
+
+The `use` macro can add functionality to a module that is _using_ it
+
+The module that is referenced by the `use` macro is required to have a callback `__using__/1` defined
+
+This will be called and add the functionality provided in this call back
+
+This is a powerful feature of _metaprogramming_ in Elixir but should be used wisely
