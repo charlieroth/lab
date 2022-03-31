@@ -684,3 +684,67 @@ The module that is referenced by the `use` macro is required to have a callback 
 This will be called and add the functionality provided in this call back
 
 This is a powerful feature of _metaprogramming_ in Elixir but should be used wisely
+
+## Comprehensions
+
+Comprehensions can often be used to produce more concise statements for `Enum` and `Stream` iteration
+
+```elixir
+# lists
+for x <- [1, 2, 3, 4, 5], do: x * x
+```
+
+```elixir
+# keyword lists
+for {_key, val} <- [one: 1, two: 2, three: 3], do: val
+```
+
+```elixir
+# maps
+for {k, v} <- %{"a" => "A", "b" => "B", "c" => "C"}, do: {k, v}
+```
+
+```elixir
+# binaries
+for <<c <- "hello">>, do: <<c>>
+```
+
+```elixir
+# multiple generators
+for n <- [1, 2, 3, 4], times <- 1..n do
+  String.duplicate("*", times)
+end
+```
+
+"Filters" can be applied to comprehensions in a similar fashion to guards
+
+```elixir
+import Integer
+```
+
+```elixir
+# all even numbers between 1 and 10
+for x <- 1..10, is_even(x), do: x
+```
+
+```elixir
+# all even numbers, between 1 and 100, that are also a multiple of 3
+for x <- 1..100,
+    is_even(x),
+    rem(x, 3) == 0,
+    do: x
+```
+
+Listen comprehensions can also be useful to transform data
+
+This can be accomplished by using `:into`
+
+```elixir
+# create a map from a keyword list
+for {k, v} <- [one: 1, two: 2, three: 3], into: %{}, do: {k, v}
+```
+
+```elixir
+# create a binary from a integer list
+for c <- [72, 101, 108, 108, 111], into: "", do: <<c>>
+```
