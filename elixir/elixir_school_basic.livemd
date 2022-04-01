@@ -1,4 +1,4 @@
-# Elixir School
+# Elixir School - Basics
 
 ## Basics
 
