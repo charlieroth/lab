@@ -1,0 +1,163 @@
+# Elixir School - Intermediate
+
+## Concurrency
+
+Processes in the Erlang VM are lightweight and can be ran across all available CPUs of the machine it is being ran on
+
+```elixir
+defmodule Example do
+  def add(a, b) do
+    IO.puts(a + b)
+  end
+end
+```
+
+```elixir
+Example.add(2, 3)
+```
+
+To create a new process in the Erlang VM, use the `spawn/1` or `spawn/3` functions, which return a Process Identifier (PID)
+
+```elixir
+spawn(Example, :add, [2, 3])
+```
+
+#### Message Passing
+
+For two processes to communicate, the functions `send/2` and `receive/1` allow the programmer to create this communication logic
+
+```elixir
+defmodule Example do
+  def listen do
+    receive do
+      {:ok, "hello"} -> IO.puts("World")
+    end
+
+    listen()
+  end
+end
+```
+
+```elixir
+pid = spawn(Example, :listen, [])
+```
+
+```elixir
+send(pid, {:ok, "hello"})
+```
+
+```elixir
+send(pid, :ok)
+```
+
+```elixir
+Process.exit(pid, :normal)
+```
+
+#### Process Linking
+
+`spawn_link/1`, or `spawn_link/3`, can be used to "link" two processes so they _can_ be "aware" of each other
+
+Two linked processes will receive exit notifications from one another
+
+```elixir
+defmodule Example do
+  def explode, do: exit(:kaboom)
+end
+```
+
+```elixir
+# spawn(Example, :explode, [])
+```
+
+```elixir
+# spawn_link(Example, :explode, [])
+```
+
+```elixir
+defmodule Example do
+  def explode, do: exit(:kaboom)
+
+  def run do
+    Process.flag(:trap_exit, true)
+    spawn_link(Example, :explode, [])
+
+    receive do
+      {:EXIT, _from_pid, reason} -> IO.puts("Exit reason: #{reason}")
+    end
+  end
+end
+```
+
+```elixir
+Example.run()
+```
+
+#### Process Monitoring
+
+`spawn_monitor/1`, or `spawn_monitor/3`, can be used to be notified when a process crashes without the current process crashing or needing to explicitly trap exits
+
+```elixir
+defmodule Example do
+  def explode, do: exit(:kaboom)
+
+  def run do
+    spawn_monitor(Example, :explode, [])
+
+    receive do
+      {:DOWN, _ref, :process, _from_pid, reason} -> IO.puts("Exit reason: #{reason}")
+    end
+  end
+end
+```
+
+```elixir
+Example.run()
+```
+
+#### Agents
+
+An abstraction around background processes maintaining state
+
+```elixir
+{:ok, agent} = Agent.start_link(fn -> [1, 2, 3] end)
+```
+
+```elixir
+Agent.update(agent, fn state -> state ++ [4, 5, 6] end)
+```
+
+```elixir
+Agent.get(agent, & &1)
+```
+
+```elixir
+Agent.start_link(fn -> [1, 2, 3] end, name: Numbers)
+```
+
+```elixir
+Agent.get(Numbers, & &1)
+```
+
+#### Tasks
+
+Provides a way to execute a function in the background and retrieve its value later
+
+Useful when handling expensive operations without blocking the application execution
+
+```elixir
+defmodule Example do
+  def double(x) do
+    :timer.sleep(2000)
+    x * 2
+  end
+end
+```
+
+```elixir
+task = Task.async(Example, :double, [2000])
+```
+
+```elixir
+Task.await(task)
+```
