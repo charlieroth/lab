@@ -1,0 +1,16 @@
+# Concurrency: Distributed
+
+## Section
+
+```elixir
+defmodule Distributed do
+  def hello_world() do
+    IO.puts("Hello from 'concurrency_distributed.livemd' updated")
+  end
+end
+```
+
+```elixir
+IO.puts(node())
+IO.puts(Node.get_cookie())
+```
