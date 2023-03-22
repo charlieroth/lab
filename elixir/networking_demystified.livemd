@@ -182,3 +182,97 @@ HTTP server return content to clients. The hand off to server-app logic is handl
 ### `Plug`
 
 An abstraction of HTTP Req/Res pairs
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+defmodule HelloWorldPlug do
+  def init(opts), do: opts
+
+  def call(%Plug.Conn{} = conn, _opts) do
+    Plug.Conn.send_resp(conn, 200, "Hello, World!")
+  end
+end
+```
+
+`Plug` comes with built-in Plugs that are usually enough for any web application
+
+### `Plug` Servers
+
+Plug is implemented in `:cowboy` via the `Plug.Cowboy` adapter
+
+`Bandit` is `Plug`-native
+
+<!-- livebook:{"break_markdown":true} -->
+
+The Stack So Far
+
+```mermaid
+graph TD;
+  subgraph Plug
+    D[Bandit]-->SocketServer
+  end
+
+  subgraph SocketServer
+    C[Thousand Island]-->TCP/IP
+  end
+
+  subgraph TCP/IP
+    A[ERTS - :gen_tcp / :ssl]-->B[OS - sys/socket.h]
+  end
+```
+
+## Phoenix
+
+The HTTP part of Phoenix is "just" a `Plug`
+
+Phoenix Websocket support is a different thing
+
+<!-- livebook:{"break_markdown":true} -->
+
+The Stack So Far
+
+```mermaid
+graph TD;
+  subgraph API
+    E[Phoenix]-->Plug
+  end
+
+  subgraph Plug
+    D[Bandit]-->ThousandIsland.Handler
+  end
+
+  subgraph ThousandIsland.Handler
+    C[Thousand Island]-->:gen_tcp/:ssl
+  end
+
+  subgraph :gen_tcp/:ssl
+    A[ERTS]-->B[OS - sys/socket.h]
+  end
+```
+
+## Bandit: A Closer Look
+
+*Up To 5X faster than Cowboy*
+
+### HTTP/1.1 In Bandit
+
+1 process per connection. Cowboy uses 2 processes per connection
+
+1:1 mapping between `ThousandIsland.Handler.handle_data/3` calls and `Plug.call/2` calls leading to straightforward, linear code
+
+### HTTP/2 In Bandit
+
+1 process per connection + 1 process per stream
+
+Connection process implements `ThousandIsland.Handler`
+
+Stream processes make the `Plug` calls
+
+`iodata` everywhere for speed and memory efficiency
+
+### Where Is Bandit Today?
+
+[mtrudel/bandit: Project Status](https://github.com/mtrudel/bandit#project-status)
+
+TLDR; drop-in replacement for Cowboy and support Phoenix applications
