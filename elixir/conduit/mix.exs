@@ -40,6 +40,7 @@ defmodule Conduit.MixProject do
       {:commanded, "~> 1.4"},
       {:eventstore, "~> 1.4"},
       {:commanded_eventstore_adapter, "~> 1.4"},
+      {:commanded_ecto_projections, "~> 1.3"},
       {:uuid, "~> 1.1"},
       {:exconstructor, "~> 1.2"},
       {:poison, "~> 5.0"},
