@@ -7,7 +7,7 @@ defmodule Conduit.Application do
   def start(_type, _args) do
     children = [
       ConduitWeb.Telemetry,
-      # Conduit.Repo,
+      Conduit.Repo,
       {Finch, name: Conduit.Finch},
       ConduitWeb.Endpoint
     ]
