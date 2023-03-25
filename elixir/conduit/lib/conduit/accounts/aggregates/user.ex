@@ -2,6 +2,7 @@ defmodule Conduit.Accounts.Aggregates.User do
   defstruct [:uuid, :username, :email, :hashed_password]
 
   alias Conduit.Accounts.Aggregates.User
+  alias Conduit.Accounts.Commands.RegisterUser
 
   @doc """
   Register a new user
