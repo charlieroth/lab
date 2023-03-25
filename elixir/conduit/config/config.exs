@@ -8,6 +8,9 @@
 import Config
 
 config :conduit,
+  event_stores: [Conduit.EventStore]
+
+config :conduit,
   ecto_repos: [Conduit.Repo]
 
 # Configures the endpoint

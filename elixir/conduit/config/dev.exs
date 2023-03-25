@@ -1,11 +1,22 @@
 import Config
 
+# Configure event store
+config :conduit, Conduit.EventStore,
+  serializer: Commanded.Serialization.JsonSerializer,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "conduit_eventstore_dev",
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10
+
 # Configure your database
 config :conduit, Conduit.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
-  database: "conduit_dev",
+  database: "conduit_readstore_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
