@@ -16,7 +16,7 @@ defmodule Conduit.MixProject do
   def application do
     [
       mod: {Conduit.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :crypto]
     ]
   end
 
@@ -40,6 +40,7 @@ defmodule Conduit.MixProject do
       {:commanded, "~> 1.4"},
       {:eventstore, "~> 1.4"},
       {:commanded_eventstore_adapter, "~> 1.4"},
+      {:uuid, "~> 1.1"},
       {:ex_machina, "~> 2.7", only: :test}
     ]
   end
