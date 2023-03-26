@@ -30,5 +30,19 @@ defmodule Conduit.AccountsTest do
       assert {:error, :validation_failure, errors} = Accounts.register_user(build(:user))
       assert errors == %{username: ["has already been taken"]}
     end
+
+    @tag :integration
+    test "should fail when username format is invalid and return error" do
+      assert {:error, :validation_failure, errors} =
+               Accounts.register_user(build(:user, username: "te@st"))
+
+      assert errors == %{username: ["is invalid"]}
+    end
+
+    @tag :integration
+    test "should convert username to lowercase" do
+      assert {:ok, %User{} = user} = Accounts.register_user(build(:user, username: "tEsT"))
+      assert user.username == "test"
+    end
   end
 end

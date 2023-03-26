@@ -4,10 +4,27 @@ defmodule Conduit.Accounts.Commands.RegisterUser do
   use ExConstructor
   use Vex.Struct
 
+  alias Conduit.Accounts.Commands.RegisterUser
+
   validates(:uuid, uuid: true)
-  validates(:username, presence: [message: "can't be empty"], string: true, unique_username: true)
+
+  validates(:username,
+    presence: [message: "can't be empty"],
+    format: [with: ~r/^[a-z0-9]+$/, allow_nil: true, allow_blank: true, message: "is invalid"],
+    string: true,
+    unique_username: true
+  )
+
   validates(:email, presence: [message: "can't be empty"], string: true)
   validates(:hashed_password, presence: [message: "can't be empty"], string: true)
+
+  def assign_uuid(%RegisterUser{} = command, uuid) do
+    %RegisterUser{command | uuid: uuid}
+  end
+
+  def downcase_username(%RegisterUser{username: username} = command) do
+    %RegisterUser{command | username: String.downcase(username)}
+  end
 end
 
 defimpl Conduit.Support.Middleware.Uniqueness.UniqueFields,

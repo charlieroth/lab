@@ -16,8 +16,9 @@ defmodule Conduit.Accounts do
 
     command =
       attrs
-      |> assign(:uuid, uuid)
       |> Commands.RegisterUser.new()
+      |> Commands.RegisterUser.assign_uuid(uuid)
+      |> Commands.RegisterUser.downcase_username()
 
     with :ok <- Conduit.App.dispatch(command, consistency: :strong) do
       case Repo.get(Projections.User, uuid) do
@@ -39,6 +40,4 @@ defmodule Conduit.Accounts do
     |> Queries.UserByUsername.new()
     |> Repo.one()
   end
-
-  defp assign(attrs, key, value), do: Map.put(attrs, key, value)
 end
