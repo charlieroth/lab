@@ -20,6 +20,7 @@ defmodule Conduit.Accounts do
       |> RegisterUser.assign_uuid(uuid)
       |> RegisterUser.downcase_username()
       |> RegisterUser.downcase_email()
+      |> RegisterUser.hash_password()
 
     with :ok <- Conduit.App.dispatch(command, consistency: :strong) do
       case Repo.get(Projections.User, uuid) do

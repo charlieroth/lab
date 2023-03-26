@@ -45,8 +45,7 @@ defmodule Conduit.MixProject do
       {:exconstructor, "~> 1.2"},
       {:poison, "~> 5.0"},
       {:vex, "~> 0.9.0"},
-      {:comeonin, "~> 5.3"},
-      {:bcrypt, "~> 1.2"},
+      {:bcrypt_elixir, "~> 3.0"},
       {:ex_machina, "~> 2.7", only: :test}
     ]
   end

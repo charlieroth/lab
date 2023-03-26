@@ -1,6 +1,7 @@
 defmodule Conduit.AccountsTest do
   use Conduit.DataCase
 
+  alias Conduit.Auth
   alias Conduit.Accounts
   alias Conduit.Accounts.Projections.User
 
@@ -11,7 +12,6 @@ defmodule Conduit.AccountsTest do
 
       assert user.username == "test"
       assert user.email == "test@email.com"
-      assert user.hashed_password == "pass123"
       assert user.bio == nil
       assert user.image == nil
     end
@@ -79,6 +79,12 @@ defmodule Conduit.AccountsTest do
     test "should convert email address to lowercase" do
       assert {:ok, %User{} = user} = Accounts.register_user(build(:user, email: "tEsT@eMaIl.cOm"))
       assert user.email == "test@email.com"
+    end
+
+    @tag :integration
+    test "should hash password" do
+      assert {:ok, %User{} = user} = Accounts.register_user(build(:user, email: "tEsT@eMaIl.cOm"))
+      assert Auth.validate_password("pass123", user.hashed_password)
     end
   end
 end
