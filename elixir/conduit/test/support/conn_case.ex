@@ -28,11 +28,12 @@ defmodule ConduitWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import ConduitWeb.ConnCase
+      import Conduit.Factory
     end
   end
 
-  setup tags do
-    Conduit.DataCase.setup_sandbox(tags)
+  setup _tags do
+    Conduit.Storage.reset!()
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 end

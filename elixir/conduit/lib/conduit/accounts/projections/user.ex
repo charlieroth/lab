@@ -3,6 +3,7 @@ defmodule Conduit.Accounts.Projections.User do
   import Ecto.Changeset
 
   @primary_key {:uuid, :binary_id, autogenerate: false}
+  @derive {Phoenix.Param, key: :uuid}
 
   schema "accounts_users" do
     field :username, :string

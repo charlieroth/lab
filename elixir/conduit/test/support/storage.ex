@@ -4,8 +4,14 @@ defmodule Conduit.Storage do
   """
 
   def reset!() do
+    :ok = Application.stop(:conduit)
+    :ok = Application.stop(:commanded)
+    :ok = Application.stop(:eventstore)
+
     reset_eventstore()
     reset_readstore()
+
+    {:ok, _} = Application.ensure_all_started(:conduit)
   end
 
   defp reset_eventstore() do
