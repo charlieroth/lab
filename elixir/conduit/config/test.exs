@@ -1,5 +1,7 @@
 import Config
 
+config :comeonin, :bcrypt_log_rounds, 4
+
 # Configure event store
 config :conduit, Conduit.EventStore,
   serializer: Commanded.Serialization.JsonSerializer,
