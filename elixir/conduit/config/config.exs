@@ -10,6 +10,8 @@ import Config
 config :conduit,
   event_stores: [Conduit.EventStore]
 
+config :commanded_ecto_projections, repo: Conduit.Repo
+
 config :conduit,
   ecto_repos: [Conduit.Repo]
 

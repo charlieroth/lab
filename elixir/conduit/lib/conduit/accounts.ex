@@ -3,6 +3,7 @@ defmodule Conduit.Accounts do
   The Accounts context.
   """
 
+  alias Conduit.Repo
   alias Conduit.Accounts.Commands.RegisterUser
   alias Conduit.Router
 
@@ -10,13 +11,27 @@ defmodule Conduit.Accounts do
   Register a new user.
   """
   def register_user(attrs \\ %{}) do
-    attrs
-    |> assign_uuid(:user_uuid)
-    |> RegisterUser.new()
-    |> Router.dispatch()
+    uuid = UUID.uuid4()
+
+    command =
+      attrs
+      |> assign(:uuid, uuid)
+      |> RegisterUser.new()
+
+    with :ok <- Router.dispatch(command, consistency: :strong) do
+      get(User, uuid)
+    else
+      reply ->
+        reply
+    end
   end
 
-  defp assign_uuid(attrs, identity) do
-    Map.put(attrs, identity, UUID.uuid4())
+  defp get(schema, uuid) do
+    case Repo.get(schema, uuid) do
+      nil -> {:error, :not_found}
+      projection -> {:ok, projection}
+    end
   end
+
+  defp assign(attrs, key, value), do: Map.put(attrs, key, value)
 end

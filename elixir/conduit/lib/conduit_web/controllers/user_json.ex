@@ -1,5 +1,5 @@
 defmodule ConduitWeb.UserJSON do
-  alias Conduit.Accounts.User
+  alias Conduit.Accounts.Projections.User
 
   @doc """
   Renders a list of users.
@@ -17,7 +17,7 @@ defmodule ConduitWeb.UserJSON do
 
   defp data(%User{} = user) do
     %{
-      id: user.id,
+      id: user.uuid,
       username: user.username,
       email: user.email,
       hashed_password: user.hashed_password,

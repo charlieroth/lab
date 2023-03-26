@@ -8,8 +8,10 @@ defmodule Conduit.Application do
     children = [
       ConduitWeb.Telemetry,
       Conduit.Repo,
+      Conduit.App,
       {Finch, name: Conduit.Finch},
-      ConduitWeb.Endpoint
+      ConduitWeb.Endpoint,
+      {Conduit.Accounts.Supervisor, []}
     ]
 
     opts = [strategy: :one_for_one, name: Conduit.Supervisor]

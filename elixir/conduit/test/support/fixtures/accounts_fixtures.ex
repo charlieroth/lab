@@ -17,7 +17,7 @@ defmodule Conduit.AccountsFixtures do
         image: "some image",
         username: "some username"
       })
-      |> Conduit.Accounts.create_user()
+      |> Conduit.Accounts.register_user()
 
     user
   end
