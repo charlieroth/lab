@@ -10,7 +10,8 @@ defmodule Conduit.Application do
       Conduit.Repo,
       Conduit.App,
       {Conduit.Accounts.Supervisor, []},
-      ConduitWeb.Endpoint
+      ConduitWeb.Endpoint,
+      {Conduit.Support.Unique, []}
     ]
 
     opts = [strategy: :one_for_one, name: Conduit.Supervisor]
