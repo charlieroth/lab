@@ -3,11 +3,10 @@ import Config
 # Configure event store
 config :conduit, Conduit.EventStore,
   serializer: Commanded.Serialization.JsonSerializer,
+  database: "conduit_eventstore_test",
   username: "postgres",
   password: "postgres",
-  hostname: "localhost",
-  database: "conduit_eventstore_test",
-  pool_size: 1
+  hostname: "localhost"
 
 # Configure your database
 #
@@ -15,11 +14,10 @@ config :conduit, Conduit.EventStore,
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
 config :conduit, Conduit.Repo,
+  database: "conduit_readstore_test",
   username: "postgres",
   password: "postgres",
-  hostname: "localhost",
-  database: "conduit_readstore_test",
-  pool_size: 1
+  hostname: "localhost"
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

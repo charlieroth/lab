@@ -2,8 +2,8 @@ defmodule Conduit.Accounts.Projectors.User do
   use Commanded.Projections.Ecto,
     application: Conduit.App,
     repo: Conduit.Repo,
-    consistency: :strong,
-    name: "Accounts.Projectors.User"
+    name: "Accounts.Projectors.User",
+    consistency: :strong
 
   alias Conduit.Accounts.Events.UserRegistered
   alias Conduit.Accounts.Projections.User
@@ -14,8 +14,8 @@ defmodule Conduit.Accounts.Projectors.User do
       username: event.username,
       email: event.email,
       hashed_password: event.hashed_password,
-      bio: event.bio,
-      image: event.image
+      bio: nil,
+      image: nil
     })
   end)
 end

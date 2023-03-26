@@ -9,9 +9,8 @@ defmodule Conduit.Application do
       ConduitWeb.Telemetry,
       Conduit.Repo,
       Conduit.App,
-      {Finch, name: Conduit.Finch},
-      ConduitWeb.Endpoint,
-      {Conduit.Accounts.Supervisor, []}
+      {Conduit.Accounts.Supervisor, []},
+      ConduitWeb.Endpoint
     ]
 
     opts = [strategy: :one_for_one, name: Conduit.Supervisor]

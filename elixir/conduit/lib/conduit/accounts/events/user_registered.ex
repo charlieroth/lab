@@ -1,8 +1,8 @@
 defmodule Conduit.Accounts.Events.UserRegistered do
-  @derive [Poison.Encoder]
+  @derive Jason.Encoder
 
   defstruct [
-    :user_uuid,
+    :uuid,
     :username,
     :email,
     :hashed_password

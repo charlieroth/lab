@@ -6,13 +6,13 @@ defmodule Conduit.Accounts.Aggregates.UserTest do
   describe "register user" do
     @tag :unit
     test "should succeed when valid" do
-      user_uuid = UUID.uuid4()
+      uuid = UUID.uuid4()
 
       assert_events(
-        build(:register_user, user_uuid: user_uuid),
+        build(:register_user, uuid: uuid),
         [
           %UserRegistered{
-            user_uuid: user_uuid,
+            uuid: uuid,
             username: "test",
             email: "test@email.com",
             hashed_password: "pass123"

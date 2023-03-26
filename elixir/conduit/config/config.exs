@@ -8,12 +8,24 @@
 import Config
 
 config :conduit,
-  event_stores: [Conduit.EventStore]
+  event_store: [
+    adapter: Commanded.EventStore.Adapters.EventStore,
+    event_store: Conduit.EventStore
+  ],
+  pubsub: :local,
+  registry: :local
 
-config :commanded_ecto_projections, repo: Conduit.Repo
+config :conduit, event_stores: [Conduit.EventStore]
 
 config :conduit,
   ecto_repos: [Conduit.Repo]
+
+config :vex,
+  sources: [
+    Conduit.Accounts.Validators,
+    Conduit.Support.Validators,
+    Vex.Validators
+  ]
 
 # Configures the endpoint
 config :conduit, ConduitWeb.Endpoint,

@@ -1,14 +1,17 @@
 defmodule Conduit.Accounts.Supervisor do
-  use Supervisor
+  @moduledoc false
 
-  alias Conduit.Accounts
+  use Supervisor
 
   def start_link(opts) do
     Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
+  @impl Supervisor
   def init(_opts) do
-    children = [Accounts.Projectors.User]
-    Supervisor.init(children, strategy: :one_for_one)
+    Supervisor.init(
+      [Conduit.Accounts.Projectors.User],
+      strategy: :one_for_one
+    )
   end
 end

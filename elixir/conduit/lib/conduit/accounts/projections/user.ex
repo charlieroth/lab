@@ -17,7 +17,7 @@ defmodule Conduit.Accounts.Projections.User do
   @doc false
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:username, :email, :hashed_password, :bio, :image])
-    |> validate_required([:username, :email, :hashed_password, :bio, :image])
+    |> cast(attrs, [:username, :email, :hashed_password])
+    |> validate_required([:username, :email, :hashed_password])
   end
 end
