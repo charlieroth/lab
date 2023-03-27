@@ -1,8 +1,6 @@
 defmodule Conduit.Accounts.Validators.UniqueEmail do
   use Vex.Validator
 
-  alias Conduit.Accounts
-
   def validate(value, _opts) do
     Vex.Validators.By.validate(value,
       function: fn value -> !email_registered?(value) end,
@@ -11,7 +9,7 @@ defmodule Conduit.Accounts.Validators.UniqueEmail do
   end
 
   defp email_registered?(email) do
-    case Accounts.user_by_email(email) do
+    case Conduit.Accounts.user_by_email(email) do
       nil -> false
       _ -> true
     end
