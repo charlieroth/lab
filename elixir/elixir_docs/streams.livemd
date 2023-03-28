@@ -1,0 +1,272 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Enumerables and Streams
+
+## Enumerables
+
+The concept of enumerables is accessible in Elixir via the `Enum` module
+
+There are different kinds of enumerbales in Elixir:
+
+* Lists
+* Maps
+
+```elixir
+Enum.map([1, 2, 3], fn x ->
+  x * 2
+end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[2, 4, 6]
+```
+
+```elixir
+Enum.map(%{1 => 2, 2 => 3, 3 => 4}, fn {k, v} ->
+  k * v
+end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[2, 6, 12]
+```
+
+Elixir also provides "ranges" which are a useful syntax to describe a range of values you want to iterate over.
+
+```elixir
+Enum.map(1..10, fn x -> x + 1 end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+```
+
+```elixir
+Enum.reduce(1..10, 0, fn x, acc ->
+  acc + x
+end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+55
+```
+
+The `Enum` module is polymorphic, meaning it can work with many data types while using the same operations. This is achieved by a data structure implementing the `Enumerable` protocol
+
+## Eager vs Lazy
+
+All functions in the `Enum` module are "eager", meaning they execute immediately
+
+```elixir
+odd? = fn n -> rem(n, 2) != 0 end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Function<42.3316493/1 in :erl_eval.expr/6>
+```
+
+```elixir
+Enum.filter(1..10, odd?)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[1, 3, 5, 7, 9]
+```
+
+When performing multiple operations with `Enum`, each operation will produce an intermediate list until the result is reached
+
+```elixir
+1..100_000
+|> Enum.map(fn x -> x * 3 end)
+|> Enum.filter(odd?)
+|> Enum.sum()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+7500000000
+```
+
+##### The Pipe Operator
+
+Above, `Enum` operations are "chained" together with the pipe `|>` operator. It takes the output from the left side and passes it as the first argument to the function call on its right side.
+
+It's purpose is to highlight the data being transformed by a series of functions
+
+## Streams
+
+An alternative to the `Enum` module is the `Stream` module which supports "lazy" operations
+
+```elixir
+1..100_000
+|> Stream.map(fn x -> x * 3 end)
+|> Stream.filter(odd?)
+|> Enum.sum()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+7500000000
+```
+
+Breaking down the above pipeline of operations you can better understand how streams work
+
+First the range is passed to `Stream.map/2`. In comparison to `Enum.map/2`, this will not produce a list but rather a `Stream` data structure
+
+```elixir
+1..100_000 |> Stream.map(&(&1 * 3))
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Stream<[enum: 1..100000, funs: [#Function<48.124013645/1 in Stream.map/2>]]>
+```
+
+**Streams** are composable just like **Enums** so you can compose many operations together
+
+```elixir
+1..100_000
+|> Stream.map(&(&1 * 3))
+|> Stream.filter(odd?)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Stream<[
+  enum: 1..100000,
+  funs: [#Function<48.124013645/1 in Stream.map/2>, #Function<40.124013645/1 in Stream.filter/2>]
+]>
+```
+
+So instead of producing intermediate lists, **Streams** build a series of computations that are invoked only when passing the `Stream` data structure to the `Enum` module. This makes **Streams** useful when working with large, *possibly infinite*, collections
+
+```elixir
+1..100_000
+|> Stream.map(&(&1 * 3))
+|> Stream.filter(odd?)
+|> Enum.sum()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+7500000000
+```
+
+Many functions in the `Stream` module accept an *enumerable* as an argument and return a `Stream` as a result
+
+```elixir
+stream = Stream.cycle(1..3)
+stream |> Enum.take(9)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[1, 2, 3, 1, 2, 3, 1, 2, 3]
+```
+
+`Stream.unfold/2` can be used to generate values from a given initial value
+
+```elixir
+stream = Stream.unfold("hello", &String.next_codepoint/1)
+stream |> Enum.take(3)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+["h", "e", "l"]
+```
+
+A notable function is `Stream.resource/3` which is used to wrap around resources/operations like reading large files or even slow resources like network resources
+
+```elixir
+"/Users/charlie/github.com/charlieroth/lab/elixir/lorem-ipsum.txt"
+|> File.stream!()
+|> Stream.flat_map(fn line ->
+  String.split(line, " ")
+end)
+|> Stream.map(fn word ->
+  String.replace(word, "\n", "")
+end)
+|> Enum.reduce(%{}, fn word, word_count ->
+  Map.update(word_count, word, 0, fn count ->
+    count + 1
+  end)
+end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%{
+  "at" => 107,
+  "Maecenas" => 48,
+  "sit" => 132,
+  "dui" => 37,
+  "euismod." => 4,
+  "dignissim" => 32,
+  "justo," => 11,
+  "eget" => 115,
+  "faucibus," => 1,
+  "efficitur." => 5,
+  "convallis," => 6,
+  "dolor," => 12,
+  "auctor." => 6,
+  "odio." => 9,
+  "non." => 4,
+  "ad" => 12,
+  "enim." => 13,
+  "vehicula," => 1,
+  "porta." => 3,
+  "metus." => 15,
+  "fermentum," => 3,
+  "eros" => 39,
+  "luctus" => 36,
+  "nibh," => 13,
+  "eget," => 9,
+  "accumsan" => 38,
+  "turpis" => 31,
+  "id" => 113,
+  "tellus," => 7,
+  "consequat." => 5,
+  "dictum." => 3,
+  "felis" => 40,
+  "et," => 11,
+  "nec." => 4,
+  "est." => 16,
+  "nunc" => 31,
+  "posuere." => 5,
+  "mauris" => 34,
+  "gravida" => 30,
+  "ultricies," => 2,
+  "pulvinar" => 39,
+  "felis." => 12,
+  "pharetra" => 35,
+  "placerat." => 11,
+  "tempus," => 4,
+  "purus" => 43,
+  "Interdum" => 3,
+  "sagittis," => 4,
+  "neque" => 40,
+  "imperdiet." => 8,
+  ...
+}
+```
