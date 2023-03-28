@@ -1,0 +1,190 @@
+# Elixir AI
+
+```elixir
+Mix.install([
+  {:nx, "~> 0.5.2"}
+])
+```
+
+## Artificial Intelligence With Elixir
+
+Elixir supports the capabilities of performing computations capable of producing *artificial intelligence*. This is accomplished with the following libraries:
+
+* `Nx` - multi-dimensional tensor library with multi-staged compilation to the CPU/GPU
+* `Axon` - high-level interface for creating neural network models
+
+## Nx: Multi-dimensional Tensors and Numerical Expressions
+
+[Nx Hexdocs](https://hexdocs.pm/nx/Nx.html)
+
+The following code cells in this section are from, or derivatives of, the [Intro to Nx](https://hexdocs.pm/nx/intro-to-nx.html) guide in the `hexdocs`
+
+<!-- livebook:{"break_markdown":true} -->
+
+A simple tensor
+
+```elixir
+t = Nx.tensor([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+```
+
+Since tensors are used to perform multi-dimensional mathematics, they have a shape associated with them
+
+```elixir
+t |> Nx.shape()
+```
+
+`Nx.Tensor` can be created from `List`
+
+```elixir
+t = 1..4 |> Enum.chunk_every(2) |> Nx.tensor(names: [:y, :x])
+```
+
+The above `Nx.Tensor` has named dimensions so they can be accessed accordingly
+
+```elixir
+%{"first column" => t[x: 0], "first row" => t[y: 0]}
+```
+
+Exercise:
+
+* Create a `{3,3}` tensor with named dimensions
+* Return a `{2,2}` tensor containing the first two columns of the first two rows
+
+```elixir
+t =
+  1..9
+  |> Enum.chunk_every(3)
+  |> Nx.tensor(names: [:j, :i])
+
+t = t[j: 0..1][i: 0..1]
+```
+
+### Tensor Aware Functions
+
+```elixir
+t
+```
+
+The `Nx` module has many functions to do scalar operations on a `Nx.Tensor`
+
+```elixir
+t |> Nx.cos()
+```
+
+You can call functions that aggregates the contents of a tensor for example to get the sum of the numbers in a `Nx.Tensor`
+
+```elixir
+t |> Nx.sum()
+```
+
+```elixir
+# Sum of rows in tensor
+t |> Nx.sum(axes: [:i])
+```
+
+#### Exercise
+
+* Create a `{2, 2, 2}` tensor
+* With values `1..8`
+* With dimension names `[:z, :y, :x]`
+* Calculate the sums along the `:y` axis
+
+```elixir
+1..8
+|> Enum.chunk_every(4)
+|> Enum.map(&Enum.chunk_every(&1, 2))
+|> Nx.tensor(names: [:z, :y, :x])
+|> Nx.sum(axes: [:y])
+```
+
+Other matrix operations such as subtraction are available via the `Nx` module
+
+```elixir
+a = Nx.tensor([[5, 6], [7, 8]])
+b = Nx.tensor([[1, 2], [3, 4]])
+
+a |> Nx.subtract(b)
+```
+
+### Broadcasting
+
+`Nx.broadcast/2` takes a tensor or a scalar and a shape, translating it to a compatible shape by copying it
+
+```elixir
+Nx.broadcast(1, {2, 2})
+```
+
+```elixir
+a = Nx.tensor([[1, 2], [3, 4]])
+
+# Want to do [[1, 2], [3, 4]] - 1 (subtract 1 from every element in the LHS)
+
+b = Nx.subtract(a, Nx.broadcast(1, {2, 2}))
+
+b == Nx.subtract(a, 1)
+
+# Here we pass a tensor to Nx.broadcast/2 and it will extract it's shape to make a compatible operation
+b == Nx.subtract(a, Nx.broadcast(1, a))
+```
+
+```elixir
+# Subtract row (or column) wise
+# Want to do [[1, 2], [3, 4]] - [[1, 2]] === [[1, 2], [3, 4]] - [[1, 2], [1, 2]] === [[0, 0], [2, 2]]
+
+a = Nx.tensor([[1, 2], [3, 4]])
+b = Nx.tensor([[1, 2]])
+c = a |> Nx.subtract(Nx.broadcast(b, {2, 2}))
+
+# The subtraction function will take care of the broadcast implicitly
+c2 = a |> Nx.subtract(b)
+
+c == c2
+```
+
+### Automatic Differentiation (autograd)
+
+Gradients are critical for solving systems of equations and building probablistic models. In advanced math, derivatives, or differential equations, are use to take gradients. Nx can compute these derivatives automatically throught a feature called auomatic differentiation, or autograd
+
+```elixir
+defmodule Funs do
+  import Nx.Defn
+
+  defn poly(x) do
+    3 * Nx.pow(x, 2) + 2 * x + 1
+  end
+
+  defn poly_slope_at(x) do
+    grad(&poly/1).(x)
+  end
+
+  defn sinwave(x) do
+    Nx.sin(x)
+  end
+
+  defn sinwave_slope_at(x) do
+    grad(&sinwave/1).(x)
+  end
+end
+```
+
+The function `grad/1` takes a function and returns a function returning the gradient
+
+You can check if this value is correct by looking at the graph of `6x + 2`
+
+```elixir
+Funs.poly_slope_at(2)
+```
+
+You can check if this value is correct by looking at the graph of `acos(x)`
+
+```elixir
+Funs.sinwave_slope_at(1)
+```
+
+## Axon: High-Level Interface For Neural Network Models
+
+[Hexdocs](https://hexdocs.pm/axon/Axon.html)
+
+Axon is high-level interface for creating neural network models
+
+Axon is built entirely on top of Nx numerical definitions, so every neural network can be JIT or AOT compiled using any Nx compiler, or even transformed into high-level neural network formats like TensorFlow Lite and ONNX.
