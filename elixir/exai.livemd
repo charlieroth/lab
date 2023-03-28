@@ -2,7 +2,9 @@
 
 ```elixir
 Mix.install([
-  {:nx, "~> 0.5.2"}
+  {:nx, "~> 0.5.2"},
+  {:axon, "~> 0.5.1"},
+  {:kino, "~> 0.9.0"}
 ])
 ```
 
@@ -188,3 +190,194 @@ Funs.sinwave_slope_at(1)
 Axon is high-level interface for creating neural network models
 
 Axon is built entirely on top of Nx numerical definitions, so every neural network can be JIT or AOT compiled using any Nx compiler, or even transformed into high-level neural network formats like TensorFlow Lite and ONNX.
+
+## First Model (Identity Model)
+
+Everything in `Axon` centers around the `%Axon{}` struct which represents an instance of an Axon model
+
+Models are graphs which represent transformation and flow of input data to a desired output. You can think of models as representing a single computation or function
+
+All Axon models start with a declaration of input noes. These are the root nodes of your computation graph, and correspond to the actual input data you want to sent to Axon:
+
+```elixir
+model = Axon.input("data")
+```
+
+`input`, technically speaking, is now a valid `Axon` model which you can inspect, execute and initialize
+
+```elixir
+template = Nx.template({2, 8}, :f32)
+```
+
+```elixir
+model |> Axon.Display.as_graph(template)
+```
+
+The execution flow is just a single node, because the graph consists of an input node. You pass dat in and the models returns the same data, without any intermediate transformations
+
+You can build the `%Axon{}` struct into it's `initialization` and `forward` functions by calling `Axon.build/2`. This pattern of "lowering" or transforming the `%Axon{}` struct into other functions or representations is very common in `Axon`. By traversing the data structure you can create useful functions, execution visualizations, and more
+
+```elixir
+{init_fn, predict_fn} = Axon.build(model)
+```
+
+`init_fn` returns all of your model's trainable parameters and state. You need to pass a template and any initial parameters you want your model to start with (this is useful for things like transfer learning)
+
+`predict_fn` returns transformed inputs from your model's trainable parameters and the given inputs
+
+```elixir
+training_params = init_fn.(template, %{})
+```
+
+The `init_fn/2` returned `%{}` because `model` does not have any trainable parameters. This should make sense because it's just an input layer
+
+```elixir
+input = 1..8 |> Enum.chunk_every(4) |> Nx.tensor(type: :f32)
+predict_fn.(training_params, input)
+```
+
+Passing the `training_params` and some `input` to the `predict_fn`, the model can actually be executed, returning the given input as expected
+
+## Sequential Models
+
+Sequential models are named after the sequential nature in which data flows through them. Sequential models transform the input with sequential, successive transformations
+
+To create a sequential model in `Axon` is the same as writing sequential transformation in "regular" Elixir
+
+Links:
+
+* [ReLU Activation](https://machinelearningmastery.com/rectified-linear-activation-function-for-deep-learning-neural-networks/)
+* [Dropout for Regularizing Deep Neural Networks](https://machinelearningmastery.com/dropout-for-regularizing-deep-neural-networks/)
+* [Softmax Function](https://en.wikipedia.org/wiki/Softmax_function)
+
+```elixir
+model =
+  Axon.input("data")
+  # layer with 32 outputs
+  |> Axon.dense(32)
+  # layer with an element wise operation of :relu
+  |> Axon.activation(:relu)
+  # layer to reduce overfitting, effective regularization method
+  |> Axon.dropout(rate: 0.5)
+  # layer with 1 output
+  |> Axon.dense(1)
+  # layer with an element wise operation of :softmax
+  |> Axon.activation(:softmax)
+```
+
+Visualizing the model we can see how the data will flow
+
+```elixir
+template = Nx.template({4, 8}, :f32)
+```
+
+```elixir
+Axon.Display.as_graph(model, template)
+```
+
+```elixir
+{init_fn, predict_fn} = Axon.build(model)
+```
+
+```elixir
+training_params = init_fn.(template, %{})
+```
+
+This model actually has trainable parameters. The parameter map is just a regular Elixir map. Each top-level entry maps to a layer with a key corresponding to that layer's name and a value corresponding to that layer's trainable parameters. Each layer's individual trainable parameters are given layer-specific names and map directly to `Nx` tensors
+
+```elixir
+input = Nx.iota({4, 8}, type: :f32)
+```
+
+```elixir
+predict_fn.(training_params, input)
+```
+
+## Complex Models
+
+Some models require a more flexible API. Since `Axon` models are just Elixir data structures, you can manipulate them and decompose architectures as you would any other Elixir program
+
+```elixir
+input = Axon.input("data")
+```
+
+```elixir
+x1 = input |> Axon.dense(32)
+```
+
+```elixir
+x2 = input |> Axon.dense(64) |> Axon.relu() |> Axon.dense(32)
+```
+
+```elixir
+model = Axon.add(x1, x2)
+```
+
+Your model branches `input` into `x1` and `x2`. Each branch performs a different set of transformations. At the end, the branches are merged with `Axon.add/3`. The Layer that is created with `Axon.add/3` is sometimes called a *combinator*. It is a layer that operates on multiple `Axon` models at once, typically to merge some branches together
+
+`model` represents the final `Axon` model
+
+Visualizing this model you can see the fully built branching in this model
+
+```elixir
+template = Nx.template({2, 16}, :f32)
+```
+
+```elixir
+Axon.Display.as_graph(model, template)
+```
+
+```elixir
+{init_fn, predict_fn} = Axon.build(model)
+```
+
+```elixir
+training_params = init_fn.(template, %{})
+```
+
+As your model's architecture grows in complexity, you might find yourself reaching for better abstractions to organize your model creation code. PyTorch models are often organized into `nn.Module`. If you're translating models from PyTorch to Axon, it's natural to create one Elixir function per `nn.Module`.
+
+You should write your models as you would any other Elixir code
+
+```elixir
+defmodule ComplexModel do
+  def create() do
+    Axon.input("data")
+    |> conv_block()
+    |> Axon.flatten()
+    |> dense_block()
+    |> dense_block()
+    |> Axon.dense(1)
+  end
+
+  defp conv_block(input) do
+    input
+    |> Axon.conv(3, padding: :same)
+    |> Axon.mish()
+    |> Axon.add(input)
+    |> Axon.max_pool(kernel_size: {2, 3})
+  end
+
+  defp dense_block(input) do
+    input
+    |> Axon.dense(32)
+    |> Axon.relu()
+  end
+end
+```
+
+```elixir
+model = ComplexModel.create()
+```
+
+```elixir
+template = Nx.template({1, 28, 28, 3}, :f32)
+```
+
+```elixir
+Axon.Display.as_graph(model, template)
+```
+
+## Multi-Input & Multi-Output Models
+
+TODO
