@@ -504,3 +504,118 @@ params = init_fn.(Nx.template({2, 8}, :f32), %{})
 ```elixir
 predict_fn.(params, Nx.iota({2, 8}, type: :f32))
 ```
+
+## Model Hooks
+
+Inspecting or visualizing the values of intermediate layers in your model during the forward or backwards pass can be key to understanding the behavior of your model (e.g., visualizing the gradients of activation functions to ensure learning in a stable manner). Axon supports this via *model hooks*.
+
+Model hooks are unidirectional communication with an executing model. Hooks are unidirectional in the sense that you can only receive information from your model, and not send information to the model.
+
+Hooks attach per-layer and can execute at 4 different points in model execution: `initalization`, `pre-forward`, `forward pass`, or `backward pass`
+
+```elixir
+input = Nx.iota({2, 4}, type: :f32)
+```
+
+```elixir
+model =
+  Axon.input("data")
+  |> Axon.dense(8)
+  |> Axon.attach_hook(fn val -> IO.inspect(val, label: :dense_init) end, on: :initialize)
+  |> Axon.attach_hook(fn val -> IO.inspect(val, label: :dense_forward) end, on: :forward)
+  |> Axon.relu()
+  |> Axon.attach_hook(fn val -> IO.inspect(val, label: :relu) end, on: :forward)
+
+{init_fn, predict_fn} = Axon.build(model)
+```
+
+```elixir
+params = init_fn.(input, %{})
+```
+
+```elixir
+predict_fn.(params, input)
+```
+
+Hooks execute in the order they were attached to a layer. If you attach 2 hooks to the same layer which execute different functions on the same event, they will run in order
+
+```elixir
+model =
+  Axon.input("data")
+  |> Axon.dense(8)
+  |> Axon.attach_hook(fn val -> IO.inspect(val, label: :hook1) end, on: :forward)
+  |> Axon.attach_hook(fn val -> IO.inspect(val, label: :hook2) end, on: :forward)
+  |> Axon.relu()
+
+{init_fn, predict_fn} = Axon.build(model)
+```
+
+```elixir
+params = init_fn.(input, %{})
+```
+
+```elixir
+predict_fn.(params, input)
+```
+
+Hooks can also be configured to run on all events
+
+```elixir
+model =
+  Axon.input("data")
+  |> Axon.dense(8)
+  |> Axon.attach_hook(&IO.inspect/1, on: :all)
+  |> Axon.relu()
+  |> Axon.dense(1)
+
+{init_fn, predict_fn} = Axon.build(model)
+```
+
+`initialization` hook
+
+```elixir
+params = init_fn.(input, %{})
+```
+
+`pre-forward` and `forward` hooks
+
+```elixir
+predict_fn.(params, input)
+```
+
+`backwards` hook
+
+```elixir
+Nx.Defn.grad(fn params -> predict_fn.(params, input) end).(params)
+```
+
+Hooks can be configured to only run when the model is built in a certain mode such as `training` and `inference` mode
+
+```elixir
+model =
+  Axon.input("data")
+  |> Axon.dense(8)
+  |> Axon.attach_hook(&IO.inspect/1, on: :forward, mode: :train)
+  |> Axon.relu()
+
+{init_fn, predict_fn} = Axon.build(model, mode: :train)
+```
+
+```elixir
+params = init_fn.(input, %{})
+```
+
+```elixir
+predict_fn.(params, input)
+```
+
+Now building with `:inference` mode, the hook will not run
+
+```elixir
+{init_fn, predict_fn} = Axon.build(model, mode: :inference)
+params = init_fn.(input, %{})
+```
+
+```elixir
+predict_fn.(params, input)
+```
