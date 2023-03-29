@@ -457,13 +457,21 @@ predict_fn.(params, data)
 
 A layer in `Axon` is just a `defn` implementation with special `Axon` inputs. Every layer in `Axon` is implemented with the `Axon.layer/3` function. The API of `Axon.layer/3` intentionally mirrors `Kernel.apply/2` to make developing custom layers as close to writing "normal" Elixir code as possible.
 
-`defn` looks like any other `def` implementation except `defn` implementations must always account for `opts` as a second parameter because it will always receive a `:mode` option indicating whether or not the model is running in training or inference mode. This allows you to custom the behavior of the layer based on the execution mode
+`defn` looks like any other `def` implementation except `defn` implementations must always account for `opts` as a second parameter because it will always receive a `:mode` option indicating whether or not the model is running in training or inference mode. This allows you to custom the behavior of the layer based on the execution mode.
+
+If you plan on re-using customer layers in many locations, it's recommended that you wrap them in Elixir functions as an interface. If you were to try and use `defn` instead of `def` you would receive an error about a `LazyContainer` being incorrectly used
 
 ```elixir
 defmodule CustomLayers do
   import Nx.Defn
 
-  defn my_layer(input, alpha, _opts \\ []) do
+  def my_layer(%Axon{} = input, opts \\ []) do
+    opts = Keyword.validate!(opts, [:name])
+    alpha = Axon.param("alpha", fn _ -> {} end)
+    Axon.layer(&my_layer_impl/3, [input, alpha], name: opts[:name], op_name: :my_layer)
+  end
+
+  defnp my_layer_impl(input, alpha, _opts \\ []) do
     input
     |> Nx.sin()
     |> Nx.multiply(alpha)
@@ -474,14 +482,15 @@ end
 With the layer implementation defined, `Axon.layer/2` can be used to apply the layer to a model
 
 ```elixir
-data = Axon.input("data")
-alpha = Axon.param("alpha", fn _ -> {} end)
-model = Axon.layer(&CustomLayers.my_layer/3, [data, alpha])
+model =
+  Axon.input("data")
+  |> CustomLayers.my_layer()
+  |> CustomLayers.my_layer()
+  |> Axon.dense(1)
 ```
 
 ```elixir
-template = Nx.template({2, 8}, :f32)
-Axon.Display.as_graph(model, template)
+Axon.Display.as_graph(model, Nx.template({2, 8}, :f32))
 ```
 
 ```elixir
@@ -489,7 +498,7 @@ Axon.Display.as_graph(model, template)
 ```
 
 ```elixir
-params = init_fn.(template, %{})
+params = init_fn.(Nx.template({2, 8}, :f32), %{})
 ```
 
 ```elixir
