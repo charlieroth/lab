@@ -380,4 +380,73 @@ Axon.Display.as_graph(model, template)
 
 ## Multi-Input & Multi-Output Models
 
-TODO
+##### Multi-Input Model
+
+Sometimes your model has the need for multiple inputs
+
+```elixir
+input1 = Axon.input("input1")
+input2 = Axon.input("input2")
+model = Axon.add(input1, input2)
+```
+
+You can inspect the inputs of your model in two ways: `Axon.Display.as_graph/1` and `Axon.get_inputs/1`
+
+```elixir
+Axon.get_inputs(model)
+```
+
+```elixir
+inputs = %{"input1" => Nx.template({2, 8}, :f32), "input2" => Nx.template({2, 8}, :f32)}
+```
+
+```elixir
+Axon.Display.as_graph(model, inputs)
+```
+
+```elixir
+{init_fn, predict_fn} = Axon.build(model)
+```
+
+```elixir
+training_params = init_fn.(inputs, %{})
+```
+
+```elixir
+input1 = Nx.iota({2, 8}, type: :f32)
+```
+
+```elixir
+input2 = Nx.iota({2, 8}, type: :f32)
+```
+
+```elixir
+inputs = %{"input1" => input1, "input2" => input2}
+```
+
+```elixir
+predict_fn.(training_params, inputs)
+```
+
+##### Multi-Output Models
+
+You also might want to have multiple outputs from your model. `Axon.container/2` can be used to wrap multiple nodes into any supported `Nx` container:
+
+```elixir
+data = Axon.input("data")
+x1 = data |> Axon.dense(32) |> Axon.relu()
+x2 = data |> Axon.dense(64) |> Axon.relu()
+model = Axon.container({x1, x2})
+```
+
+```elixir
+template = Nx.template({2, 8}, :f32)
+Axon.Display.as_graph(model, template)
+```
+
+```elixir
+{init_fn, predict_fn} = Axon.build(model)
+params = init_fn.(template, %{})
+data = Nx.iota({2, 8}, type: :f32)
+predict_fn.(params, data)
+```
