@@ -1,0 +1,528 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Building Makemore: Part 1
+
+```elixir
+Mix.install([
+  {:axon, "~> 0.5.1"},
+  {:nx, "~> 0.5.2"},
+  {:kino, "~> 0.9.0"},
+  {:vega_lite, "~> 0.1.7"},
+  {:kino_vega_lite, "~> 0.1.8"}
+])
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+## Introduction & Makemore Overview
+
+This is a Livebook following the video, created by Andrej Karpathy, [The spelled-out intro to language modeling: building makemore](https://www.youtube.com/watch?v=PaCmpygFfXo&list=PLeytxiRx8Ii_nelp7r4S35thfam5tIBAB&index=2)
+
+<!-- livebook:{"break_markdown":true} -->
+
+#### Makemore Overview
+
+[Github](https://github.com/karpathy/makemore)
+
+`Makemore` takes one text file as input, where each line is assumed to be one training thing, and generates more things like it. Under the hood, it is an autoregressive character-level language model, with a wide choice of models from bigrams all the way to a Transformer (exactly as seen in GPT). For example, we can feed it a database of names, and makemore will generate cool baby name ideas that all sound name-like, but are not already existing names. Or if we feed it a database of company names then we can generate new ideas for a name of a company. Or we can just feed it valid scrabble words and generate english-like babble.
+
+## Loading Names Dataset
+
+```elixir
+dataset_path = "/Users/charlie/ML/datasets/names.txt"
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+"/Users/charlie/ML/datasets/names.txt"
+```
+
+```elixir
+names =
+  dataset_path
+  |> File.read!()
+  |> String.split("\n", trim: true)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+["emma", "olivia", "ava", "isabella", "sophia", "charlotte", "mia", "amelia", "harper", "evelyn",
+ "abigail", "emily", "elizabeth", "mila", "ella", "avery", "sofia", "camila", "aria", "scarlett",
+ "victoria", "madison", "luna", "grace", "chloe", "penelope", "layla", "riley", "zoey", "nora",
+ "lily", "eleanor", "hannah", "lillian", "addison", "aubrey", "ellie", "stella", "natalie", "zoe",
+ "leah", "hazel", "violet", "aurora", "savannah", "audrey", "brooklyn", "bella", "claire", "skylar",
+ ...]
+```
+
+```elixir
+number_of_names = length(names)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+32033
+```
+
+```elixir
+minimum_char_count = names |> Enum.min_by(&String.length/1) |> String.length()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+2
+```
+
+```elixir
+maximum_char_count = names |> Enum.max_by(&String.length/1) |> String.length()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+15
+```
+
+```elixir
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+nil
+```
+
+```elixir
+chars =
+  97..122
+  |> Enum.map(fn uc -> <<uc::utf8>> end)
+  |> Enum.with_index()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[
+  {"a", 0},
+  {"b", 1},
+  {"c", 2},
+  {"d", 3},
+  {"e", 4},
+  {"f", 5},
+  {"g", 6},
+  {"h", 7},
+  {"i", 8},
+  {"j", 9},
+  {"k", 10},
+  {"l", 11},
+  {"m", 12},
+  {"n", 13},
+  {"o", 14},
+  {"p", 15},
+  {"q", 16},
+  {"r", 17},
+  {"s", 18},
+  {"t", 19},
+  {"u", 20},
+  {"v", 21},
+  {"w", 22},
+  {"x", 23},
+  {"y", 24},
+  {"z", 25}
+]
+```
+
+```elixir
+itos =
+  chars
+  |> Enum.reduce(%{}, fn {c, i}, acc -> Map.put(acc, i + 1, c) end)
+  |> Map.put(0, ".")
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%{
+  0 => ".",
+  1 => "a",
+  2 => "b",
+  3 => "c",
+  4 => "d",
+  5 => "e",
+  6 => "f",
+  7 => "g",
+  8 => "h",
+  9 => "i",
+  10 => "j",
+  11 => "k",
+  12 => "l",
+  13 => "m",
+  14 => "n",
+  15 => "o",
+  16 => "p",
+  17 => "q",
+  18 => "r",
+  19 => "s",
+  20 => "t",
+  21 => "u",
+  22 => "v",
+  23 => "w",
+  24 => "x",
+  25 => "y",
+  26 => "z"
+}
+```
+
+```elixir
+stoi =
+  chars
+  |> Enum.reduce(%{}, fn {c, i}, acc -> Map.put(acc, c, i + 1) end)
+  |> Map.put(".", 0)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%{
+  "." => 0,
+  "a" => 1,
+  "b" => 2,
+  "c" => 3,
+  "d" => 4,
+  "e" => 5,
+  "f" => 6,
+  "g" => 7,
+  "h" => 8,
+  "i" => 9,
+  "j" => 10,
+  "k" => 11,
+  "l" => 12,
+  "m" => 13,
+  "n" => 14,
+  "o" => 15,
+  "p" => 16,
+  "q" => 17,
+  "r" => 18,
+  "s" => 19,
+  "t" => 20,
+  "u" => 21,
+  "v" => 22,
+  "w" => 23,
+  "x" => 24,
+  "y" => 25,
+  "z" => 26
+}
+```
+
+## Bigram Language Model
+
+Only working with two characters at a time. We are looking at a single character and trying to predict the next character. It is a simple and weak language model but a good place to start
+
+```elixir
+bigrams =
+  names
+  |> Enum.flat_map(fn name ->
+    chunks = name |> String.graphemes() |> Enum.chunk_every(2, 1, ["."])
+    [[first_ch | _other_ch] | _rest] = chunks
+    [[".", first_ch] | chunks]
+  end)
+  |> Enum.map(&List.to_tuple/1)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[
+  {".", "e"},
+  {"e", "m"},
+  {"m", "m"},
+  {"m", "a"},
+  {"a", "."},
+  {".", "o"},
+  {"o", "l"},
+  {"l", "i"},
+  {"i", "v"},
+  {"v", "i"},
+  {"i", "a"},
+  {"a", "."},
+  {".", "a"},
+  {"a", "v"},
+  {"v", "a"},
+  {"a", "."},
+  {".", "i"},
+  {"i", "s"},
+  {"s", "a"},
+  {"a", "b"},
+  {"b", "e"},
+  {"e", "l"},
+  {"l", "l"},
+  {"l", "a"},
+  {"a", "."},
+  {".", "s"},
+  {"s", "o"},
+  {"o", "p"},
+  {"p", "h"},
+  {"h", "i"},
+  {"i", "a"},
+  {"a", "."},
+  {".", "c"},
+  {"c", "h"},
+  {"h", "a"},
+  {"a", "r"},
+  {"r", "l"},
+  {"l", "o"},
+  {"o", "t"},
+  {"t", "t"},
+  {"t", "e"},
+  {"e", "."},
+  {".", "m"},
+  {"m", "i"},
+  {"i", "a"},
+  {"a", "."},
+  {".", "a"},
+  {"a", "m"},
+  {"m", ...},
+  {...},
+  ...
+]
+```
+
+```elixir
+bigram_map =
+  bigrams
+  |> Enum.reduce(%{}, fn bigram, acc ->
+    Map.update(acc, bigram, 1, fn count -> count + 1 end)
+  end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%{
+  {".", "i"} => 591,
+  {"i", "i"} => 82,
+  {"o", "s"} => 504,
+  {"e", "v"} => 463,
+  {"e", "e"} => 1271,
+  {"t", "g"} => 2,
+  {"h", "d"} => 24,
+  {"n", "g"} => 273,
+  {"l", "a"} => 2623,
+  {"k", "l"} => 139,
+  {"y", "z"} => 78,
+  {"d", "h"} => 118,
+  {"e", "u"} => 69,
+  {"t", "u"} => 78,
+  {"n", "x"} => 6,
+  {"v", "h"} => 1,
+  {"g", "g"} => 25,
+  {"c", "."} => 97,
+  {"b", "i"} => 217,
+  {"s", "w"} => 24,
+  {"m", "t"} => 4,
+  {".", "p"} => 515,
+  {"b", "c"} => 1,
+  {"y", "c"} => 115,
+  {"q", "e"} => 1,
+  {"v", "e"} => 568,
+  {"o", "e"} => 132,
+  {"d", "n"} => 31,
+  {"i", "a"} => 2445,
+  {"m", "s"} => 35,
+  {"e", "w"} => 50,
+  {"x", "h"} => 1,
+  {"o", "g"} => 44,
+  {"l", "y"} => 1588,
+  {"f", "h"} => 1,
+  {"y", "y"} => 23,
+  {"u", "t"} => 82,
+  {"g", "y"} => 31,
+  {"x", "a"} => 103,
+  {"s", "c"} => 60,
+  {"j", "l"} => 9,
+  {".", "r"} => 1639,
+  {"x", "c"} => 4,
+  {"c", "q"} => 11,
+  {"v", "k"} => 3,
+  {"a", "c"} => 470,
+  {"z", "b"} => 4,
+  {"d", "f"} => 5,
+  {"r", ...} => 99,
+  {...} => 2,
+  ...
+}
+```
+
+```elixir
+index_counts =
+  bigrams
+  |> Enum.map(fn {ch1, ch2} ->
+    {Map.get(stoi, ch1), Map.get(stoi, ch2)}
+  end)
+  |> Enum.group_by(fn t -> t end)
+  |> Enum.reduce(%{}, fn {location, occurences}, acc ->
+    Map.put(acc, location, length(occurences))
+  end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%{
+  {1, 26} => 435,
+  {4, 5} => 1283,
+  {20, 3} => 17,
+  {19, 22} => 14,
+  {16, 10} => 1,
+  {11, 8} => 307,
+  {26, 21} => 73,
+  {10, 25} => 10,
+  {11, 19} => 95,
+  {6, 18} => 114,
+  {15, 17} => 3,
+  {10, 13} => 5,
+  {5, 9} => 818,
+  {12, 16} => 15,
+  {14, 16} => 5,
+  {6, 23} => 4,
+  {10, 19} => 7,
+  {17, 0} => 28,
+  {14, 15} => 496,
+  {3, 15} => 380,
+  {13, 25} => 287,
+  {14, 17} => 2,
+  {13, 6} => 1,
+  {4, 19} => 29,
+  {12, 8} => 19,
+  {5, 17} => 14,
+  {3, 16} => 1,
+  {15, 3} => 114,
+  {23, 8} => 23,
+  {5, 22} => 463,
+  {1, 2} => 541,
+  {16, 15} => 59,
+  {15, 16} => 95,
+  {8, 5} => 674,
+  {15, 2} => 140,
+  {1, 24} => 182,
+  {26, 4} => 2,
+  {23, 23} => 2,
+  {25, 17} => 6,
+  {25, 0} => 2007,
+  {18, 10} => 25,
+  {4, 15} => 378,
+  {14, 24} => 6,
+  {4, 18} => 424,
+  {21, 24} => 34,
+  {4, 26} => 1,
+  {24, 15} => 41,
+  {14, 8} => 26,
+  {6, ...} => 10,
+  {...} => 181,
+  ...
+}
+```
+
+```elixir
+t =
+  0..26
+  |> Enum.map(fn i ->
+    0..26
+    |> Enum.map(fn j ->
+      Map.get(index_counts, {i, j}, 0)
+    end)
+  end)
+  |> Nx.tensor(type: :f32)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Nx.Tensor<
+  f32[27][27]
+  [
+    [0.0, 4410.0, 1306.0, 1542.0, 1690.0, 1531.0, 417.0, 669.0, 874.0, 591.0, 2422.0, 2963.0, 1572.0, 2538.0, 1146.0, 394.0, 515.0, 92.0, 1639.0, 2055.0, 1308.0, 78.0, 376.0, 307.0, 134.0, 535.0, 929.0],
+    [6640.0, 556.0, 541.0, 470.0, 1042.0, 692.0, 134.0, 168.0, 2332.0, 1650.0, 175.0, 568.0, 2528.0, 1634.0, 5438.0, 63.0, 82.0, 60.0, 3264.0, 1118.0, 687.0, 381.0, 834.0, ...],
+    ...
+  ]
+>
+```
+
+We want to sample from the tensor `t`. To do this we need to convert our raw counts to probability vectors. It is known to be a proper probability vector if the sum of the elements is `1`
+
+Can be confirmed with:
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+t_sum = t[0] |> Nx.sum()
+t0_sum = t[0] |> Nx.divide(t_sum) |> Nx.sum()
+```
+
+```elixir
+t_sum = t[0] |> Nx.sum()
+t[0] |> Nx.divide(t_sum)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Nx.Tensor<
+  f32[27]
+  [0.0, 0.13767053186893463, 0.040770456194877625, 0.048137858510017395, 0.05275809392333031, 0.047794461250305176, 0.013017825782299042, 0.020884713158011436, 0.02728436328470707, 0.018449723720550537, 0.07560952752828598, 0.09249836206436157, 0.04907439276576042, 0.07923079282045364, 0.03577560558915138, 0.012299816124141216, 0.01607717014849186, 0.0028720381669700146, 0.05116598680615425, 0.06415259093046188, 0.040832892060279846, 0.002434988971799612, 0.01173789519816637, 0.009583866223692894, 0.0041831862181425095, 0.016701526939868927, 0.02900134213268757]
+>
+```
+
+Sampling from the distributions
+
+```elixir
+key = Nx.Random.key(2_147_483_647)
+{values, _} = Nx.Random.normal(key, 0, 1, shape: {1, 3}, type: :f32)
+v_sum = values |> Nx.sum()
+values |> Nx.divide(v_sum)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Nx.Tensor<
+  f32[1][3]
+  [
+    [1.0721101760864258, -0.2846589684486389, 0.21254877746105194]
+  ]
+>
+```
+
+## Visualize Tensor
+
+```elixir
+# TODO: This requires more advanced knowledge of VegaLite and Explorer
+# See https://youtu.be/PaCmpygFfXo?t=1219 for example of visualization trying to create
+# display =
+#   VegaLite.new(width: 400, height: 400)
+#   |> VegaLite.data_from_values(i: 0..27, j: 0..27)
+#   |> VegaLite.mark(:line)
+#   |> VegaLite.encode_field(:x, "i", type: :quantitative)
+#   |> VegaLite.encode_field(:y, "j", type: :quantitative)
+#   |> Kino.VegaLite.new()
+#   |> Kino.render()
+
+# Enum.each(index_counts, fn {loc, count} ->
+#   {i, j} = loc
+#   Kino.VegaLite.push(display, %{"i" => i, "j" => j})
+# end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+nil
+```
