@@ -38,22 +38,11 @@ pub fn LinkedList(comptime T: type) type {
         }
 
         pub fn remove(self: *Self, link: *Link) LinkedListError!void {
-            // Make sure link is in list
             _ = try self.find(link.data);
 
-            // If link to remove is the head, use pop()
             var it: ?*Link = self.head;
-            if (it) |lnk| {
-                if (lnk.data == link.data) {
-                    _ = try self.pop();
-                    return;
-                }
-            }
-
-            // Otherwise, remove link
             while (it) |lnk| : (it = lnk.next) {
                 if (lnk.next.?.data == link.data) {
-                    // `lnk` is now the previous link to link we want to remove
                     lnk.next = link.next;
                     break;
                 }
