@@ -1,0 +1,93 @@
+# Exploring Kino
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.10.0"},
+  {:req, "~> 0.3.10"},
+  {:absinthe_client, "~> 0.1.0"}
+])
+```
+
+## Github GraphQL API: Star Fetcher
+
+```elixir
+defmodule GithubGraphQLServer do
+  use GenServer
+
+  def init(:ok) do
+    state = %{frame: nil}
+    {:ok, state, {:continue, :setup_form}}
+  end
+
+  def handle_continue(:setup_form, state) do
+    form =
+      [
+        username: Kino.Input.text("Username"),
+        repo: Kino.Input.text("Repository")
+      ]
+      |> Kino.Control.form(submit: "Fetch Stars")
+      |> Kino.render()
+
+    frame = Kino.Frame.new() |> Kino.render()
+
+    Kino.Control.subscribe(form, :star_fetcher_form)
+
+    {:noreply, %{state | frame: frame}}
+  end
+
+  def handle_info({:star_fetcher_form, %{data: %{username: username, repo: repo}}}, state) do
+    response =
+      Req.new(
+        base_url: "https://api.github.com",
+        headers: [
+          {"Authorization", "bearer " <> System.get_env("LB_GITHUB_TOKEN")},
+          {"Content-Type", "application/json"}
+        ]
+      )
+      |> AbsintheClient.attach()
+      |> Req.post!(
+        graphql: """
+          query { 
+            repository(owner: \"#{username}\", name: \"#{repo}\") {
+              stargazerCount
+            }
+          }
+        """
+      )
+
+    if response.status == 200 do
+      Kino.Frame.append(
+        state.frame,
+        format_message(response, username, repo)
+      )
+    else
+      Kino.Frame.append(
+        state.frame,
+        "Search failed with status: #{response.status}"
+      )
+    end
+
+    {:noreply, state}
+  end
+
+  defp format_message(%{body: %{"errors" => errors}}, _username, _repo) do
+    first_error = Enum.at(errors, 0)
+    "Failed to fetch star count: #{Map.get(first_error, "message")}"
+  end
+
+  defp format_message(%{body: %{"data" => data}}, username, repo) do
+    number_of_stars = data |> Map.get("repository") |> Map.get("stargazerCount")
+    "https://github.com/#{username}/#{repo} has #{number_of_stars} stars"
+  end
+end
+```
+
+```elixir
+{:ok, gh_server_pid} = GenServer.start(GithubGraphQLServer, :ok)
+```
+
+```elixir
+# GenServer.stop(gh_server_pid, :normal)
+```
+
+<!-- livebook:{"offset":2128,"stamp":{"token":"QTEyOEdDTQ.NuoKZQNw9ME-bho7ADAugJZnGWcbSw9blejwsUKmrkd55oEn9-OqbHti5A0.oS7rhaDKuz41lZio.2Nu89CRbOgMaXaFSdXed5D6CjxtIAwOrTdTD7OGUsDtaCncKbXQK0ZtU1irvry8.4C99HgTsyziaKQh-_hT-cw","version":1}} -->
