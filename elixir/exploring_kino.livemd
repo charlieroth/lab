@@ -8,10 +8,28 @@ Mix.install([
 ])
 ```
 
-## Github GraphQL API: Star Fetcher
+## Helpers
 
 ```elixir
-defmodule GithubGraphQLServer do
+defmodule Github do
+  def query(query_string) do
+    Req.new(
+      base_url: "https://api.github.com",
+      headers: [
+        {"Authorization", "bearer " <> System.get_env("LB_GITHUB_TOKEN")},
+        {"Content-Type", "application/json"}
+      ]
+    )
+    |> AbsintheClient.attach()
+    |> Req.post!(graphql: query_string)
+  end
+end
+```
+
+## Github Star Fetcher
+
+```elixir
+defmodule StarFetcher do
   use GenServer
 
   def init(:ok) do
@@ -29,65 +47,43 @@ defmodule GithubGraphQLServer do
       |> Kino.render()
 
     frame = Kino.Frame.new() |> Kino.render()
-
     Kino.Control.subscribe(form, :star_fetcher_form)
-
     {:noreply, %{state | frame: frame}}
   end
 
   def handle_info({:star_fetcher_form, %{data: %{username: username, repo: repo}}}, state) do
     response =
-      Req.new(
-        base_url: "https://api.github.com",
-        headers: [
-          {"Authorization", "bearer " <> System.get_env("LB_GITHUB_TOKEN")},
-          {"Content-Type", "application/json"}
-        ]
-      )
-      |> AbsintheClient.attach()
-      |> Req.post!(
-        graphql: """
-          query { 
-            repository(owner: \"#{username}\", name: \"#{repo}\") {
-              stargazerCount
-            }
+      Github.query("""
+        query { 
+          repository(owner: \"#{username}\", name: \"#{repo}\") {
+            stargazerCount
           }
-        """
-      )
+        }
+      """)
 
-    if response.status == 200 do
-      Kino.Frame.append(
-        state.frame,
-        format_message(response, username, repo)
-      )
-    else
-      Kino.Frame.append(
-        state.frame,
-        "Search failed with status: #{response.status}"
-      )
-    end
-
+    msg = handle_response(response, username, repo)
+    Kino.Frame.append(state.frame, msg)
     {:noreply, state}
   end
 
-  defp format_message(%{body: %{"errors" => errors}}, _username, _repo) do
+  defp handle_response(%{status: 200, body: %{"errors" => errors}}, _username, _repo) do
     first_error = Enum.at(errors, 0)
     "Failed to fetch star count: #{Map.get(first_error, "message")}"
   end
 
-  defp format_message(%{body: %{"data" => data}}, username, repo) do
+  defp handle_response(%{status: 200, body: %{"data" => data}}, username, repo) do
     number_of_stars = data |> Map.get("repository") |> Map.get("stargazerCount")
     "https://github.com/#{username}/#{repo} has #{number_of_stars} stars"
+  end
+
+  defp handle_response(%{status: status}, _username, _repo) do
+    "Search failed with status: #{status}"
   end
 end
 ```
 
 ```elixir
-{:ok, gh_server_pid} = GenServer.start(GithubGraphQLServer, :ok)
+{:ok, star_fetcher} = GenServer.start(StarFetcher, :ok)
 ```
 
-```elixir
-# GenServer.stop(gh_server_pid, :normal)
-```
-
-<!-- livebook:{"offset":2128,"stamp":{"token":"QTEyOEdDTQ.NuoKZQNw9ME-bho7ADAugJZnGWcbSw9blejwsUKmrkd55oEn9-OqbHti5A0.oS7rhaDKuz41lZio.2Nu89CRbOgMaXaFSdXed5D6CjxtIAwOrTdTD7OGUsDtaCncKbXQK0ZtU1irvry8.4C99HgTsyziaKQh-_hT-cw","version":1}} -->
+<!-- livebook:{"offset":2082,"stamp":{"token":"QTEyOEdDTQ.bRFOrLCKn-m9luul_Zn5J8UqFiJukDLCAtGsJB_kPx8LT8kM-qFKUY2J5mA.0UEOR34_chg06S_e.DtSWr2-cc_4-qr0T6PwLTmKnuPpa2qOO94-fKiy4YXKc0Tdpn-eSxRGNXDEjkd8.4ZJQoQ3hXhSaJeRbLLeSsQ","version":1}} -->
