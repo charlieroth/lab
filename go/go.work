@@ -14,3 +14,4 @@ use ./arrays
 use ./slices
 use ./maps
 use ./make
+use ./structs
