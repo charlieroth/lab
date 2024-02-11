@@ -9,3 +9,4 @@ use ./for-loop
 use ./range
 use ./errors-panic-recover
 use ./packages
+use ./type-casting
