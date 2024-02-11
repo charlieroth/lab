@@ -11,3 +11,4 @@ use ./errors-panic-recover
 use ./packages
 use ./type-casting
 use ./arrays
+use ./slices
