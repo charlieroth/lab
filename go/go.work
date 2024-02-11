@@ -7,3 +7,4 @@ use ./conditional-statements
 use ./functions
 use ./for-loop
 use ./range
+use ./errors-panic-recover
