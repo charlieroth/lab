@@ -12,3 +12,4 @@ use ./packages
 use ./type-casting
 use ./arrays
 use ./slices
+use ./maps
