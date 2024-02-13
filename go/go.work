@@ -16,3 +16,4 @@ use ./maps
 use ./make
 use ./structs
 use ./modules
+use ./json
