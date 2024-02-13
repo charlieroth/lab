@@ -15,3 +15,4 @@ use ./slices
 use ./maps
 use ./make
 use ./structs
+use ./modules
