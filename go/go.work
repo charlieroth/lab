@@ -19,3 +19,4 @@ use ./modules
 use ./json
 use ./types-and-assertions
 use ./interfaces
+use ./goroutines
