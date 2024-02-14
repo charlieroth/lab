@@ -1,3 +1,3 @@
 module github.com/charlieroth/lab/go/interfaces
 
-go 1.21.6
+go 1.22.0
