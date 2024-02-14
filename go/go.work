@@ -21,3 +21,4 @@ use ./types-and-assertions
 use ./interfaces
 use ./goroutines
 use ./channels
+use ./select
