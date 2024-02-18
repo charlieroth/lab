@@ -51,3 +51,9 @@ PASS
 coverage: 88.9% of statements
 ok      github.com/charlieroth/lab/go/learn-go-with-tests/helloworld    0.323s
 ```
+
+## Testing Equality
+
+Go does not let you use equality operators with slices. A function could be written to perform this equality assertion. Go has a `reflect` package containing a function `reflect.DeepEqual`, which is useful for seeing if *any* two variable are the same.
+
+While the `reflect` package is useful it can reduce the type-safety of your code
