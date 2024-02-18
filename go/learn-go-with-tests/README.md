@@ -33,3 +33,21 @@ BenchmarkRepeat-12      15677230                76.51 ns/op
 PASS
 ok      github.com/charlieroth/lab/go/learn-go-with-tests/iteration     1.684s
 ```
+
+## Coverage
+
+Go's built-in testing toolkit also contains a coverage tool
+
+Understanding the coverage of your tests in your Go application can be done by running the command:
+
+```bash
+$ go test -cover
+```
+
+The output will look like so:
+
+```bash
+PASS
+coverage: 88.9% of statements
+ok      github.com/charlieroth/lab/go/learn-go-with-tests/helloworld    0.323s
+```
