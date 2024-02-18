@@ -1,4 +1,4 @@
-package main
+package helloworld
 
 import "fmt"
 
@@ -23,8 +23,4 @@ func Hello(name, language string) (string, error) {
 	}
 
 	return fmt.Sprintf("%s, %s", prefix, name), nil
-}
-
-func main() {
-	fmt.Println(Hello("Charlie", "English"))
 }
