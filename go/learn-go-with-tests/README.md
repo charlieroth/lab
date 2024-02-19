@@ -54,6 +54,12 @@ ok      github.com/charlieroth/lab/go/learn-go-with-tests/helloworld    0.323s
 
 ## Testing Equality
 
-Go does not let you use equality operators with slices. A function could be written to perform this equality assertion. Go has a `reflect` package containing a function `reflect.DeepEqual`, which is useful for seeing if *any* two variable are the same.
+Go does not let you use equality operators with slices. A function could be written to perform this equality assertion. Go has a `reflect` package containing a function `reflect.DeepEqual`, which is useful for seeing if _any_ two variable are the same.
 
 While the `reflect` package is useful it can reduce the type-safety of your code
+
+## Dependency Injection
+
+**If a function can not easily be tested**, this is usually due to hard-wired dependencies or global state such as a global database connection pool. Dependency Injection encourages you to "inject" the database dependency, via an `interface`, to mock what you want to control in your tests.
+
+A good application of Dependency Injection lends your code to be re-usable in different contexts. Usually the first "new" context your code can be used in is a test case. In the future maybe your function can be used by someone else for their use case.
