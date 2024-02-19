@@ -50,7 +50,4 @@ use ./mutexes
 
 use ./context
 
-use (
-	./learn-go-with-tests
-	./web-service
-)
+use ./learn-go-with-tests
