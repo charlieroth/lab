@@ -69,3 +69,9 @@ A good application of Dependency Injection lends your code to be re-usable in di
 If you agree that _slow tests ruin developer productivity_, then a making a slow test, fast, is something that should be prioritized. When dealing with a slow test due to dependency in the function using Mocking and Dependency Injection can help you achieve the same level of verification without the slow down.
 
 Like most abstractions in Go, the utilization of `interface`s is key to effectively Mocking
+
+## Concurrency
+
+_goroutines_ are the basic unit of concurrency in Go
+
+_channels_ help organize and control communication between the different processes, allowing programs to avoid _race condition_ bugs
