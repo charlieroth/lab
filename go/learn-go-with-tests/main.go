@@ -1,16 +1,12 @@
 package main
 
 import (
-	"log"
-	"net/http"
+	"os"
 
-	di "github.com/charlieroth/lab/go/learn-go-with-tests/dependency-injection"
+	mocking "github.com/charlieroth/lab/go/learn-go-with-tests/mocking"
 )
 
-func myGreetHandler(w http.ResponseWriter, r *http.Request) {
-	di.Greet(w, "world")
-}
-
 func main() {
-	log.Fatal(http.ListenAndServe(":8080", http.HandlerFunc(myGreetHandler)))
+	sleeper := &mocking.DefaultSleeper{}
+	mocking.Countdown(os.Stdout, sleeper)
 }

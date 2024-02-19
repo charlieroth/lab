@@ -63,3 +63,9 @@ While the `reflect` package is useful it can reduce the type-safety of your code
 **If a function can not easily be tested**, this is usually due to hard-wired dependencies or global state such as a global database connection pool. Dependency Injection encourages you to "inject" the database dependency, via an `interface`, to mock what you want to control in your tests.
 
 A good application of Dependency Injection lends your code to be re-usable in different contexts. Usually the first "new" context your code can be used in is a test case. In the future maybe your function can be used by someone else for their use case.
+
+## Mocking
+
+If you agree that _slow tests ruin developer productivity_, then a making a slow test, fast, is something that should be prioritized. When dealing with a slow test due to dependency in the function using Mocking and Dependency Injection can help you achieve the same level of verification without the slow down.
+
+Like most abstractions in Go, the utilization of `interface`s is key to effectively Mocking
