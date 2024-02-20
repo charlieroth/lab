@@ -75,3 +75,42 @@ Like most abstractions in Go, the utilization of `interface`s is key to effectiv
 _goroutines_ are the basic unit of concurrency in Go
 
 _channels_ help organize and control communication between the different processes, allowing programs to avoid _race condition_ bugs
+
+## Synchronization
+
+`sync.WaitGroup` is a convenient way of synchronizing concurrent processes
+
+A `WaitGroup` waits for a collection of _goroutines_ to finish. The main _goroutine_ calls `wg.Add(int)`
+to set the number of _goroutines_ to wait for. Then each of the _goroutines_ runs and calls `wg.Done()` when
+finished. At the same time, `wg.Wait()` can be use to block until all goroutines have finished
+
+Using a `WaitGroup` with a number of _goroutine_ calls is not enough to safely synchronize concurrent operations.
+
+Additionally, the resource you are trying to modify concurrently should also have a mechanism that ensures that
+only one operation is executing on this data value at a time. In Go this mechanism is a `sync.Mutex`.
+
+Idiomatically, a `sync.Mutex` is part of a struct that "guards" the data resource the program will modify
+concurrently
+
+```go
+type Counter struct {
+  mu sync.Mutex
+  value int
+}
+```
+
+When the program is concurrently modifying the piece of data, the mutex is first locked, the value is modifying, and then the mutex is unlocked allowing the program to continue to proceed.
+
+When learning how to write safe, concurrent Go programs, it can be difficult to know when to use `sync.Mutex` or a _channel_. Luckily the Go team has documented some of this knowledge to help guide developers.
+
+[Go Wiki: Use a sync.Mutex or a channel](https://go.dev/wiki/MutexOrChannel)
+
+A simple summary is:
+
+- Channel
+  - Passing ownership of data
+  - Distributing units of work
+  - Communicating async results
+- Mutex
+  - Caches
+  - State
