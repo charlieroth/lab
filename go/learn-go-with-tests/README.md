@@ -114,3 +114,20 @@ A simple summary is:
 - Mutex
   - Caches
   - State
+
+## Context
+
+The `context` package helps us manage long-running processes
+
+One of the main points of context is that it is a consistent way of offering cancellation.
+
+From [go doc](https://golang.org/pkg/context/)
+
+> Incoming requests to a server should create a Context, and outgoing calls to servers should accept a Context. The chain of function
+> calls between them must propagate the Context, optionally replacing it with a derived Context created using WithCancel, WithDeadline,
+> WithTimeout, or WithValue. When a Context is canceled, all Contexts derived from it are also canceled.
+
+From [Go Blog: Context](https://blog.golang.org/context)
+
+> At Google, we require that Go programmers pass a Context parameter as the first argument to every function on the call path between
+> incoming and outgoing requests. This allows Go code developed by many different teams to interoperate well. It provides simple control > over timeouts and cancelation and ensures that critical values like security credentials transit Go programs properly.
