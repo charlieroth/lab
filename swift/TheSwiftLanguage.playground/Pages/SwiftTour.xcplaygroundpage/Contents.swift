@@ -582,8 +582,112 @@ var b = SimpleStructure()
 b.adjust()
 let bDescription = b.simpleDescription
 
-//: TODO: https://docs.swift.org/swift-book/documentation/the-swift-programming-language/guidedtour/#Error-Handling
+/*:
+ #### Error Handling
+ 
+ Errors are represented by any type that adopts the `Error` protocol
+ */
 
+enum PrinterError: Error {
+    case outOfPaper
+    case noToner
+    case onFire
+}
 
+//: Use `throw` to throw an error, use `throws` to mark a function that can throw an error
+
+func send(job: Int, toPrinter printerName: String) throws -> String {
+    if printerName == "Never Has Toner" {
+        throw PrinterError.noToner
+    }
+    return "Job sent"
+}
+
+//: One way to handle errors is using `do-catch`. Mark code that can throw an error by writing `try` in front of it
+
+do {
+    let printerResponse = try send(job: 1040, toPrinter: "Bi Sheng")
+} catch {
+    // The error inside a catch block is automatically given the name error unless you give it a different name
+    print(error)
+}
+
+//: Use multiple `catch` blocks that handle specific errors
+
+do {
+    let printerResponse = try send(job: 1040, toPrinter: "Never Has Toner")
+    print(printerResponse)
+} catch PrinterError.onFire {
+    print("I'll just put this over here, with the rest of the fire")
+} catch let printerError as PrinterError {
+    print("Printer error: \(printerError)")
+} catch {
+    print(error)
+}
+
+//: Another way to handle errors is with `try?`. This converts the result to optional. If an error is thrown, the error is discarded and the result is `nil`.
+
+let printerSuccess = try? send(job: 1884, toPrinter: "Gutenberg")
+let printerFailure = try? send(job: 1884, toPrinter: "Never Has Toner")
+
+//: `defer` allows you to write a block of code that's executed after all other code in the function, just before the function returns
+
+var fridgeIsOpen = false
+let fridgeContent = ["milk", "eggs", "leftovers"]
+
+func fridgeContains(_ food: String) -> Bool {
+    fridgeIsOpen = true
+    defer {
+        fridgeIsOpen = false
+    }
+    
+    let result = fridgeContent.contains(food)
+    return result
+}
+
+if fridgeContains("banana") {
+    print("Found a banana")
+}
+print(fridgeIsOpen)
+
+/*:
+ #### Generics
+ 
+ Generics are a way to generalize the utility of a function
+ */
+
+func makeArray<Item>(repeating item: Item, numberOfTimes: Int) -> [Item] {
+    var result: [Item] = []
+    for _ in 0..<numberOfTimes {
+        result.append(item)
+        
+    }
+    return result
+}
+makeArray(repeating: "knock", numberOfTimes: 4)
+
+enum OptionalValue<Wrapped> {
+    case none
+    case some(Wrapped)
+}
+
+var possibleInteger: OptionalValue<Int> = .none
+possibleInteger = .some(100)
+
+//: Use `where` before the body to specify a list of requirements, for example, to require the type implement a protocol
+
+func anyCommonElements<T: Sequence, U: Sequence>(_ lhs: T, _ rhs: U) -> Bool
+where T.Element: Equatable, T.Element == U.Element
+{
+    for lhsItem in lhs {
+        for rhsItem in rhs {
+            return true
+        }
+    }
+    
+    return false
+}
+
+anyCommonElements([1,2,3], [3])
 
 //: [Next](@next)
