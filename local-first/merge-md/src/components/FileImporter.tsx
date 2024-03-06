@@ -25,7 +25,7 @@ export default function FileImporter({
   return (
     <div className="flex">
       <button
-        className="p-2 border-2 border-gray-200 rounded hover:bg-gray-200 transition-colors duration-300 ease-in-out"
+        className="text-sm hover:cursor-pointer p-2 bg-white border-2 border-bordergray rounded hover:bg-black hover:border-black hover:text-white transition-colors duration-50 ease-in-out"
         onClick={handleClick}
       >
         Import
