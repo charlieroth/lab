@@ -1,68 +1,28 @@
-import { useCallback, useRef, useState } from "react";
-import CodeMirror, { EditorView, ViewUpdate } from "@uiw/react-codemirror";
+import { useCallback, useRef } from "react";
+import CodeMirror, { ViewUpdate } from "@uiw/react-codemirror";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
+import { editorTheme } from "./theme";
 import FileImporter from "./components/FileImporter";
 import FileExporter from "./components/FileExporter";
+import { AutomergeUrl } from "@automerge/automerge-repo";
+import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import { MarkdownDoc } from "./types";
 
-const theme = EditorView.theme({
-  "&": {
-    border: "2px solid #edeef1",
-    borderRadius: "4px",
-  },
-  "&.cm-editor.cm-focused": {
-    outline: "none",
-  },
-  "&.cm-editor": {
-    height: "100%",
-  },
-  ".cm-content": {
-    height: "100%",
-    fontFamily: '"Merriweather Sans", serif',
-    padding: "10px 0",
-    margin: "0 20px",
-    textWrap: "pretty",
-    lineHeight: "24px",
-  },
-  "&.cm-focused": {
-    outline: "none",
-  },
-  ".cm-content li": {
-    marginBottom: 0,
-  },
-  ".cm-activeLine": {
-    backgroundColor: "inherit",
-  },
-  ".cm-comment-thread": {
-    backgroundColor: "rgb(255 249 194)",
-  },
-  ".cm-comment-thread.active": {
-    backgroundColor: "rgb(255 227 135)",
-  },
-  // active highlighting wins if it's inside another thread
-  ".cm-comment-thread.active .cm-comment-thread": {
-    backgroundColor: "rgb(255 227 135)",
-  },
-  ".frontmatter": {
-    fontFamily: "monospace",
-    color: "#666",
-    textDecoration: "none",
-    fontWeight: "normal",
-    lineHeight: "0.8em",
-  },
-});
+type AppProps = {
+  docUrl: AutomergeUrl;
+}
 
-export default function App() {
-  const [value, setValue] = useState<string>("");
-  const [fileName, setFileName] = useState<string>("");
+export default function App({ docUrl }: AppProps) {
+  const [doc, changeDoc] = useDocument<MarkdownDoc>(docUrl);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onChange = useCallback((value: string, viewUpdate: ViewUpdate) => {
-    setValue(value);
+    changeDoc((doc) => doc.contents = value);
   }, []);
 
   const handleFileNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFileName(e.target.value);
+    changeDoc((doc) => doc.title = e.target.value);
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -72,8 +32,10 @@ export default function App() {
     reader.onloadend = () => {
       if (typeof reader.result === "string") {
         const trimmedFileName = file.name.replace(".md", "");
-        setValue(reader.result);
-        setFileName(trimmedFileName);
+        changeDoc((doc) => {
+          doc.contents = reader.result as string
+          doc.title = trimmedFileName
+        });
       }
     };
 
@@ -81,9 +43,13 @@ export default function App() {
   };
 
   const handleExport = () => {
-    const valueWithPreservedLineBreaks = value.replace(/\r\n/g, "\n");
+    if (!doc) {
+      return;
+    }
+
+    const valueWithPreservedLineBreaks = doc.contents.replace(/\r\n/g, "\n");
     const blob = new Blob([valueWithPreservedLineBreaks], {
-      type: "text/plain",
+      type: "text/markdown",
     });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -91,8 +57,8 @@ export default function App() {
     a.target = "_blank";
     a.href = url;
 
-    if (fileName != "") {
-      a.download = `${fileName}.md`;
+    if (doc.title != "") {
+      a.download = `${doc.title}.md`;
     } else if (
       fileInputRef.current &&
       fileInputRef.current.files &&
@@ -122,7 +88,7 @@ export default function App() {
           <label>Name: </label>
           <input
             className="text-sm bg-white border-2 border-bordergray p-2 rounded"
-            value={fileName}
+            value={doc?.title || ""}
             onChange={handleFileNameChange}
           />
         </div>
@@ -137,9 +103,9 @@ export default function App() {
           className="w-full bg-white"
           minHeight="200px"
           maxHeight="calc(100vh - 200px)"
-          value={value}
+          value={doc?.contents || ""}
           onChange={onChange}
-          extensions={[markdown({ base: markdownLanguage }), theme]}
+          extensions={[markdown({ base: markdownLanguage }), editorTheme]}
           basicSetup={{
             lineNumbers: false,
             foldGutter: false,

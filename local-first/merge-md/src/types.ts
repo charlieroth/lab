@@ -1,1 +1,4 @@
-export type Mode = 'import' | 'editor'
+export type MarkdownDoc = {
+  title: string
+  contents: string
+}
