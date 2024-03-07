@@ -1,12 +1,12 @@
 import { ChangeEvent, MouseEventHandler, RefObject } from "react";
 
 type FileImporterProps = {
-  handleFile: (file: File) => void;
+  handleImport: (file: File) => void;
   fileInputRef: RefObject<HTMLInputElement>;
 };
 
 export default function FileImporter({
-  handleFile,
+  handleImport,
   fileInputRef,
 }: FileImporterProps) {
   const handleClick: MouseEventHandler<HTMLButtonElement> = () => {
@@ -18,7 +18,7 @@ export default function FileImporter({
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       const fileUploaded = event.target.files[0];
-      handleFile(fileUploaded);
+      handleImport(fileUploaded);
     }
   };
 

@@ -1,16 +1,15 @@
 import { useCallback, useRef } from "react";
 import CodeMirror, { ViewUpdate } from "@uiw/react-codemirror";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import { editorTheme } from "./theme";
-import FileImporter from "./components/FileImporter";
-import FileExporter from "./components/FileExporter";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import { editorTheme } from "./theme";
 import { MarkdownDoc } from "./types";
+import Header from "./components/Header";
 
 type AppProps = {
   docUrl: AutomergeUrl;
-}
+};
 
 export default function App({ docUrl }: AppProps) {
   const [doc, changeDoc] = useDocument<MarkdownDoc>(docUrl);
@@ -18,23 +17,23 @@ export default function App({ docUrl }: AppProps) {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onChange = useCallback((value: string, viewUpdate: ViewUpdate) => {
-    changeDoc((doc) => doc.contents = value);
+    changeDoc((doc) => (doc.contents = value));
   }, []);
 
   const handleFileNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    changeDoc((doc) => doc.title = e.target.value);
+    changeDoc((doc) => (doc.title = e.target.value));
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleFile = (file: File) => {
+  const handleImport = (file: File) => {
     const reader = new FileReader();
 
     reader.onloadend = () => {
       if (typeof reader.result === "string") {
         const trimmedFileName = file.name.replace(".md", "");
         changeDoc((doc) => {
-          doc.contents = reader.result as string
-          doc.title = trimmedFileName
+          doc.contents = reader.result as string;
+          doc.title = trimmedFileName;
         });
       }
     };
@@ -77,27 +76,13 @@ export default function App({ docUrl }: AppProps) {
 
   return (
     <div className="container m-auto">
-      <div className="mt-2 flex border-b-2 border-b-black">
-        <h1 className="text-3xl">
-          <span className="font-semibold">Merge.md</span> - Local First Markdown
-          File Editor
-        </h1>
-      </div>
-      <div className="mt-5 flex justify-between">
-        <div>
-          <label>Name: </label>
-          <input
-            className="text-sm bg-white border-2 border-bordergray p-2 rounded"
-            value={doc?.title || ""}
-            onChange={handleFileNameChange}
-          />
-        </div>
-        <div className="flex gap-2">
-          <FileImporter handleFile={handleFile} fileInputRef={fileInputRef} />
-          <FileExporter handleExport={handleExport} />
-        </div>
-      </div>
-
+      <Header
+        doc={doc}
+        fileInputRef={fileInputRef}
+        handleFileNameChange={handleFileNameChange}
+        handleImport={handleImport}
+        handleExport={handleExport}
+      />
       <div className="mt-5">
         <CodeMirror
           className="w-full bg-white"
