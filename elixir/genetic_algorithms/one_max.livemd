@@ -2,6 +2,14 @@
 
 # One-Max Problem
 
+```elixir
+Mix.install([
+  {:axon, "~> 0.6.1"},
+  {:explorer, "~> 0.8.2"},
+  {:kino_explorer, "~> 0.1.19"}
+])
+```
+
 ## Introduction
 
 The One-Max Problem is often used to introduce the concept of genetic algorithms. The problem boils down to one question: *what is the maximum sum of a bitstring (a string consisting of only 1s and 0s) of length N?*
@@ -93,29 +101,105 @@ end
 {:module, OneMax, <<70, 79, 82, 49, 0, 0, 17, ...>>, {:mutate, 1}}
 ```
 
+```elixir
+defmodule OneMaxNx do
+  def evolve(population) do
+    best = Enum.max_by(population, &Enum.sum/1)
+    IO.write("\rCurrent Best: " <> Integer.to_string(Enum.sum(best)))
+
+    if Enum.sum(best) == 1000 do
+      best
+    else
+      # Initial population
+      population
+      # Evaluate population
+      |> evaluate()
+      # Select parents
+      |> selection()
+      # Create children
+      |> crossover()
+      # Mutate population
+      |> mutate()
+      # Repeat process with new population
+      |> evolve()
+    end
+  end
+
+  def initialize_population(n, m) do
+    key = Nx.Random.key(42)
+    {population, _new_key} = Nx.Random.randint(key, 0, 1, shape: {n, m}, type: :u32)
+    population
+  end
+
+  def evaluate(population) do
+    Enum.sort_by(population, &Enum.sum/1, &>=/2)
+  end
+
+  def selection(population) do
+    population
+    |> Enum.chunk_every(2)
+    |> Enum.map(&List.to_tuple(&1))
+  end
+
+  def crossover(population) do
+    Enum.reduce(population, [], fn {p1, p2}, acc ->
+      cx_point = :rand.uniform(1000)
+
+      {{h1, t1}, {h2, t2}} =
+        {Enum.split(p1, cx_point), Enum.split(p2, cx_point)}
+
+      [h1 ++ t2, h2 ++ t1 | acc]
+    end)
+  end
+
+  def mutate(population) do
+    population
+    |> Enum.map(fn chromosome ->
+      if :rand.uniform() < 0.05 do
+        Enum.shuffle(chromosome)
+      else
+        chromosome
+      end
+    end)
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, OneMaxNx, <<70, 79, 82, 49, 0, 0, 16, ...>>, {:mutate, 1}}
+```
+
 ## Understanding the Flow of Genetic Algorithms
 
 ```elixir
-solution =
-  OneMax.initialize_population(100, 1000)
-  |> OneMax.evolve()
+# solution =
+#   OneMax.initialize_population(100, 1000)
+#   |> OneMax.evolve()
 
-IO.write("\n Answer is \n")
-IO.inspect(solution)
+# IO.write("\n Answer is \n")
+# IO.inspect(solution)
 ```
 
 <!-- livebook:{"output":true} -->
 
 ```
-Current Best: 1000
- Answer is 
-[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
- 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]
+nil
+```
+
+```elixir
+OneMaxNx.initialize_population(100, 1000)
 ```
 
 <!-- livebook:{"output":true} -->
 
 ```
-[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
- 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]
+#Nx.Tensor<
+  u32[100][1000]
+  [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...],
+    ...
+  ]
+>
 ```
