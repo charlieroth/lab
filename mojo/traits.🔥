@@ -1,0 +1,72 @@
+# A trait is like a template of characteristics for a struct
+# which they struct must implement
+#
+# Traits solves the problem of repeated code for two objects to have
+# the same functionality by letting you define a shared set of
+# behaviors that types can implement. Then you can write a function
+# that depends on the trait, rather than individual types
+#
+# Traits can inherit from other traits furthering the requirements
+# of the object that is implementing the trait
+#
+# Traits can specify required lifecycle methods, including constructors,
+# copy constructors and move constructors
+#
+# Traits can be used when defining a generic container (for example
+# an array or hashmap) that can hold different data types. The List
+# type is an example of a generic container. A single List can only
+# hold a single type of data
+from collections import List
+
+trait Animal():
+    fn make_sound(self):
+        ...
+
+trait Quackable(Animal):
+    fn quack(self):
+        ...
+
+@value
+struct Duck(Quackable):
+    fn make_sound(self):
+        self.quack()
+
+    fn quack(self):
+        print("Quack") 
+
+@value
+struct StealthCow(Quackable):
+    fn make_sound(self):
+        self.quack()
+
+    fn quack(self):
+        print("Moo!")
+
+trait DefaultConstructible:
+    fn __init__(inout self): ...
+
+trait MassProducible(DefaultConstructible, Movable):
+    pass
+
+fn factory[T: MassProducible]() -> T:
+    return T()
+
+struct Thing(MassProducible):
+    var id: Int
+
+    fn __init__(inout self):
+        self.id = 0
+
+    fn __moveinit__(inout self, owned existing: Self):
+        self.id = existing.id
+
+fn main():
+    var duck = Duck()
+    var stealth_cow = StealthCow()
+    duck.make_sound()
+    stealth_cow.make_sound()
+    var thing = factory[Thing]()
+    print(thing.id)
+    var list = List[Int](1, 2, 3)
+    for i in range(len(list)):
+        print(list[i], sep=" ", end="")

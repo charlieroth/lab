@@ -1,0 +1,18 @@
+# Mojo structs are completely static, meaning they are bound at
+# compile-time, so they do not allow dynamic dispatch or any
+# runtime changes to the structure
+struct MyPair:
+    var first: Int
+    var second: Int
+
+    fn __init__(inout self, first: Int, second: Int):
+        self.first = first
+        self.second = second
+    
+    fn dump(self):
+        print(self.first, self.second)
+
+
+fn main():
+    var mine = MyPair(4, 2)
+    mine.dump()

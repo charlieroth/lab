@@ -1,0 +1,14 @@
+fn main():
+    try:
+        var greeting = greet("Mojo")
+        var greeting2 = greet2("Mojo")
+        print(greeting)
+        print(greeting2)
+    except:
+        print("Error")
+
+fn greet(name: String) -> String:
+    return "Hello, " + name + "!"
+
+def greet2(name):
+    return "Hello, " + name + "!"
