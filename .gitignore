@@ -2,3 +2,4 @@
 
 *.csv
 /python/pylab/
+/**/*/.zig-cache
