@@ -56,10 +56,23 @@ impl<T> Sender<T> {
 
 pub struct Receiver<T> {
     shared: Arc<Shared<T>>,
+    buffer: VecDeque<T>,
 }
 
 impl<T> Receiver<T> {
     pub fn recv(&mut self) -> Option<T> {
+        // If there are some items from the last `recv` call
+        if let Some(t) = self.buffer.pop_front() {
+            return Some(t);
+        }
+        // If there are no items in the buffer, `recv` has not been called yet
+        // then a lock needs to be acquired.
+        //
+        // This is an optimization to prevent a lock from being acquired
+        // on every send, therefore reducing lock contention and faster lock
+        // acquisition. Instead a lock is only acquired once every time there
+        // were no additional sends between every time a lock occurs.
+
         // Obtain a lock on the queue
         let mut inner = self.shared.inner.lock().unwrap();
         // Loop until a message is available (not a spin loop)
@@ -67,7 +80,13 @@ impl<T> Receiver<T> {
             // Try to obtain message from queue
             match inner.queue.pop_front() {
                 // If message is available
-                Some(t) => return Some(t),
+                Some(t) => {
+                    // If the queue is not empty, place all items into the buffer
+                    if !inner.queue.is_empty() {
+                        std::mem::swap(&mut self.buffer, &mut inner.queue);
+                    }
+                    return Some(t);
+                }
                 // If no message available and no senders remain
                 None if inner.senders == 0 => return None,
                 // If no message available
@@ -104,6 +123,7 @@ pub fn channel<T>() -> (Sender<T>, Receiver<T>) {
         },
         Receiver {
             shared: shared.clone(),
+            buffer: VecDeque::new(),
         },
     )
 }
