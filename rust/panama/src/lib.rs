@@ -118,4 +118,11 @@ mod tests {
         drop(tx);
         assert_eq!(rx.recv(), None);
     }
+
+    #[test]
+    fn closed_rx() {
+        let (mut tx, rx) = channel();
+        drop(rx);
+        tx.send(42);
+    }
 }
