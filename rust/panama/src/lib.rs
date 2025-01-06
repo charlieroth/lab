@@ -81,6 +81,13 @@ impl<T> Receiver<T> {
     }
 }
 
+impl<T> Iterator for Receiver<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.recv()
+    }
+}
+
 pub fn channel<T>() -> (Sender<T>, Receiver<T>) {
     let inner = Inner {
         queue: VecDeque::default(),
@@ -124,5 +131,21 @@ mod tests {
         let (mut tx, rx) = channel();
         drop(rx);
         tx.send(42);
+    }
+
+    #[test]
+    fn iterator_rx() {
+        let (mut tx, rx) = channel();
+        tx.send(1);
+        tx.send(2);
+        tx.send(3);
+        tx.send(4);
+        drop(tx);
+        let mut rx_iter = rx.into_iter();
+        assert_eq!(rx_iter.next(), Some(1));
+        assert_eq!(rx_iter.next(), Some(2));
+        assert_eq!(rx_iter.next(), Some(3));
+        assert_eq!(rx_iter.next(), Some(4));
+        assert_eq!(rx_iter.next(), None);
     }
 }
